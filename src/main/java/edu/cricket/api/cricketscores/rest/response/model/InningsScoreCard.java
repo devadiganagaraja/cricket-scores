@@ -1,8 +1,18 @@
 package edu.cricket.api.cricketscores.rest.response.model;
 
+
 public class InningsScoreCard {
+    private InningsInfo inningsInfo;
     private BattingCard battingCard;
     private BowlingCard bowlingCard;
+
+    public InningsInfo getInningsInfo() {
+        return inningsInfo;
+    }
+
+    public void setInningsInfo(InningsInfo inningsInfo) {
+        this.inningsInfo = inningsInfo;
+    }
 
     public BattingCard getBattingCard() {
         return battingCard;

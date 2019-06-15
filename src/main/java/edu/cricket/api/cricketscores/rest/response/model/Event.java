@@ -1,5 +1,7 @@
 package edu.cricket.api.cricketscores.rest.response.model;
 
+import edu.cricket.api.cricketscores.rest.source.model.Type;
+
 public class Event {
     private String venue;
     private String eventId;
@@ -7,6 +9,13 @@ public class Event {
     private Competitor team1;
     private Competitor team2;
     private String type;
+    private String note;
+    private String manOfTheMatch;
+    private int period;
+    private int dayNumber;
+    private String description;
+    private String detail;
+    private String state;
 
     public String getEventId() {
         return eventId;
@@ -54,5 +63,62 @@ public class Event {
 
     public void setTeam2(Competitor team2) {
         this.team2 = team2;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    public String getManOfTheMatch() {
+        return manOfTheMatch;
+    }
+
+    public void setManOfTheMatch(String manOfTheMatch) {
+        this.manOfTheMatch = manOfTheMatch;
+    }
+
+
+    public int getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(int period) {
+        this.period = period;
+    }
+
+    public int getDayNumber() {
+        return dayNumber;
+    }
+
+    public void setDayNumber(int dayNumber) {
+        this.dayNumber = dayNumber;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDetail() {
+        return detail;
+    }
+
+    public void setDetail(String detail) {
+        this.detail = detail;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }

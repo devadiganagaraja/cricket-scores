@@ -1,6 +1,5 @@
 package edu.cricket.api.cricketscores.rest.response.model;
 
-import java.util.List;
 import java.util.Set;
 
 public class BattingCard {

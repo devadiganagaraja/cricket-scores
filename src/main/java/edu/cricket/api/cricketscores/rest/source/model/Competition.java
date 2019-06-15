@@ -7,6 +7,11 @@ import java.util.List;
 public class Competition {
     private List<Competitor> competitors;
     private String id;
+    private String note;
+    private Ref status;
+
+    private Ref details;
+    private Ref tiebreaker;
 
     @JsonProperty(value = "class")
     private CompetitionClass competitionClass;
@@ -36,10 +41,50 @@ public class Competition {
         this.competitionClass = competitionClass;
     }
 
+    public String getNote() {
+        return note;
+    }
+
+    public Ref getDetails() {
+        return details;
+    }
+
     @Override
     public String toString() {
         return "Competition{" +
                 "competitors=" + competitors +
+                ", id='" + id + '\'' +
+                ", note='" + note + '\'' +
+                ", status=" + status +
+                ", details=" + details +
+                ", tiebreaker=" + tiebreaker +
+                ", competitionClass=" + competitionClass +
                 '}';
     }
+
+    public void setDetails(Ref details) {
+        this.details = details;
+    }
+
+    public Ref getTiebreaker() {
+        return tiebreaker;
+    }
+
+    public void setTiebreaker(Ref tiebreaker) {
+        this.tiebreaker = tiebreaker;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+
+    public Ref getStatus() {
+        return status;
+    }
+
+    public void setStatus(Ref status) {
+        this.status = status;
+    }
+
 }

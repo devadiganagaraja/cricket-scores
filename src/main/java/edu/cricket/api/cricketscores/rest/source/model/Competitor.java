@@ -6,6 +6,7 @@ public class Competitor {
     private int order;
     private Ref score;
     private Ref team;
+    private boolean winner;
 
     public String get$ref() {
         return $ref;
@@ -45,5 +46,13 @@ public class Competitor {
 
     public void setTeam(Ref team) {
         this.team = team;
+    }
+
+    public boolean isWinner() {
+        return winner;
+    }
+
+    public void setWinner(boolean winner) {
+        this.winner = winner;
     }
 }
