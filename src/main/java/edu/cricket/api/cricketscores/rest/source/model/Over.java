@@ -12,9 +12,9 @@ public class Over {
     private int number;
     private int runs;
     private int wickets;
-    private boolean overs;
-    private boolean actual;
-    private boolean unique;
+    private double overs;
+    private double actual;
+    private double unique;
 
 
     public int getBall() {
@@ -105,27 +105,47 @@ public class Over {
         this.wickets = wickets;
     }
 
-    public boolean isOvers() {
+    public double getOvers() {
         return overs;
     }
 
-    public void setOvers(boolean overs) {
+    public void setOvers(double overs) {
         this.overs = overs;
     }
 
-    public boolean isActual() {
+    public double getActual() {
         return actual;
     }
 
-    public void setActual(boolean actual) {
+    public void setActual(double actual) {
         this.actual = actual;
     }
 
-    public boolean isUnique() {
+    public double getUnique() {
         return unique;
     }
 
-    public void setUnique(boolean unique) {
+    public void setUnique(double unique) {
         this.unique = unique;
+    }
+
+    @Override
+    public String toString() {
+        return "Over{" +
+                "ball=" + ball +
+                ", balls=" + balls +
+                ", complete=" + complete +
+                ", maiden=" + maiden +
+                ", noBall=" + noBall +
+                ", wide=" + wide +
+                ", legByes=" + legByes +
+                ", byes=" + byes +
+                ", number=" + number +
+                ", runs=" + runs +
+                ", wickets=" + wickets +
+                ", overs=" + overs +
+                ", actual=" + actual +
+                ", unique=" + unique +
+                '}';
     }
 }

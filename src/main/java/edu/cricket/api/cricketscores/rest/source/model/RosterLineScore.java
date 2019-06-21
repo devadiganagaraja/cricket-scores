@@ -41,4 +41,14 @@ public class RosterLineScore {
     public void setPeriod(int period) {
         this.period = period;
     }
+
+    @Override
+    public String toString() {
+        return "RosterLineScore{" +
+                "statistics='" + statistics + '\'' +
+                ", order=" + order +
+                ", isBatting=" + isBatting +
+                ", period=" + period +
+                '}';
+    }
 }

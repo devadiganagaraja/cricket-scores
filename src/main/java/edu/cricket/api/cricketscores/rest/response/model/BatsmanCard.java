@@ -106,4 +106,20 @@ public class BatsmanCard implements Comparable<BatsmanCard>{
     public int compareTo(BatsmanCard o) {
         return this.position.compareTo(o.position);
     }
+
+
+    @Override
+    public String toString() {
+        return "BatsmanCard{" +
+                "playerId=" + playerId +
+                ", playerName='" + playerName + '\'' +
+                ", balls='" + balls + '\'' +
+                ", runs='" + runs + '\'' +
+                ", battingDescription='" + battingDescription + '\'' +
+                ", position=" + position +
+                ", batted=" + batted +
+                ", out=" + out +
+                ", live=" + live +
+                '}';
+    }
 }

@@ -1,8 +1,6 @@
 package edu.cricket.api.cricketscores.rest.scheduler;
 
 
-import edu.cricket.api.cricketscores.rest.response.model.Event;
-import edu.cricket.api.cricketscores.rest.response.model.EventInfo;
 import edu.cricket.api.cricketscores.task.EventScoreCardTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -16,6 +16,12 @@ public class Event {
     private String description;
     private String detail;
     private String state;
+    private long leagueId;
+    private String leagueName;
+    private String leagueStartDate;
+    private String leagueEndDate;
+    private int leagueYear;
+
 
     public String getEventId() {
         return eventId;
@@ -120,5 +126,45 @@ public class Event {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public long getLeagueId() {
+        return leagueId;
+    }
+
+    public void setLeagueId(long leagueId) {
+        this.leagueId = leagueId;
+    }
+
+    public String getLeagueName() {
+        return leagueName;
+    }
+
+    public void setLeagueName(String leagueName) {
+        this.leagueName = leagueName;
+    }
+
+    public String getLeagueStartDate() {
+        return leagueStartDate;
+    }
+
+    public void setLeagueStartDate(String leagueStartDate) {
+        this.leagueStartDate = leagueStartDate;
+    }
+
+    public String getLeagueEndDate() {
+        return leagueEndDate;
+    }
+
+    public void setLeagueEndDate(String leagueEndDate) {
+        this.leagueEndDate = leagueEndDate;
+    }
+
+    public int getLeagueYear() {
+        return leagueYear;
+    }
+
+    public void setLeagueYear(int leagueYear) {
+        this.leagueYear = leagueYear;
     }
 }

@@ -14,15 +14,28 @@ public class PlayerNameService {
 
     RestTemplate restTemplate = new RestTemplate();
 
+    public long getPlayerId(long sourcePlayerId){
+        return sourcePlayerId*13;
 
-    public String getPlayerName(Long playerId){
-        if(playerNameCache.containsKey(playerId)){
-            return playerNameCache.get(playerId);
-        }else{
-            Athlete athlete = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/athletes/"+playerId, Athlete.class);
-            playerNameCache.putIfAbsent(playerId, athlete.getDisplayName()+(playerId*13));
-            return athlete.getDisplayName();
+    }
+
+
+    public String getPlayerName(Long sourceTeamId){
+        long playerId = getPlayerId(sourceTeamId);
+        try {
+
+            if(playerNameCache.containsKey(playerId)){
+                return playerNameCache.get(playerId);
+            }else{
+                Athlete athlete = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/athletes/"+sourceTeamId, Athlete.class);
+                String displayNameWithId = athlete.getDisplayName()+":"+(playerId*13);
+                playerNameCache.putIfAbsent(playerId, displayNameWithId);
+                return displayNameWithId;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
+        return "null:0";
     }
 
 }

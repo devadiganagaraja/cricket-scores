@@ -9,6 +9,7 @@ public class EventDetail {
     private String date;
     private List<Competition> competitions;
     private List<Ref> venues;
+    private Ref season;
 
     public String getDate() {
         return date;
@@ -34,12 +35,21 @@ public class EventDetail {
         this.venues = venues;
     }
 
+    public Ref getSeason() {
+        return season;
+    }
+
+    public void setSeason(Ref season) {
+        this.season = season;
+    }
+
     @Override
     public String toString() {
         return "EventDetail{" +
                 "date='" + date + '\'' +
                 ", competitions=" + competitions +
                 ", venues=" + venues +
+                ", season=" + season +
                 '}';
     }
 }
