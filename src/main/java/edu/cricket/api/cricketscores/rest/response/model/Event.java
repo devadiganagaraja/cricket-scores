@@ -21,6 +21,7 @@ public class Event {
     private String leagueStartDate;
     private String leagueEndDate;
     private int leagueYear;
+    private int internationalClassId;
 
 
     public String getEventId() {
@@ -166,5 +167,14 @@ public class Event {
 
     public void setLeagueYear(int leagueYear) {
         this.leagueYear = leagueYear;
+    }
+
+
+    public int getInternationalClassId() {
+        return internationalClassId;
+    }
+
+    public void setInternationalClassId(int internationalClassId) {
+        this.internationalClassId = internationalClassId;
     }
 }

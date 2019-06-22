@@ -21,4 +21,12 @@ public class EventListing {
     public void setItems(List<Ref> items) {
         this.items = items;
     }
+
+    @Override
+    public String toString() {
+        return "EventListing{" +
+                "count=" + count +
+                ", items=" + items +
+                '}';
+    }
 }

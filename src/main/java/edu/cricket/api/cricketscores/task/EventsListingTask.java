@@ -4,6 +4,7 @@ import edu.cricket.api.cricketscores.rest.response.model.Event;
 import edu.cricket.api.cricketscores.rest.response.model.EventInfo;
 import edu.cricket.api.cricketscores.rest.response.model.League;
 import edu.cricket.api.cricketscores.rest.service.PlayerNameService;
+import edu.cricket.api.cricketscores.rest.service.TeamNameService;
 import edu.cricket.api.cricketscores.rest.source.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,9 @@ public class EventsListingTask {
 
     @Autowired
     PlayerNameService playerNameService;
+
+    @Autowired
+    TeamNameService teamNameService;
 
     private static final Logger log = LoggerFactory.getLogger(EventsListingTask.class);
 
@@ -60,6 +64,7 @@ public class EventsListingTask {
         Competition competition = eventDetail.getCompetitions().get(0);
         if(competition.getCompetitionClass().getInternationalClassId() > 0) {
             Event event = new Event();
+            event.setInternationalClassId(competition.getCompetitionClass().getInternationalClassId());
             event.setEventId(String.valueOf(Integer.parseInt(competition.getId())*13));
             event.setStartDate(eventDetail.getDate());
             event.setVenue(getEventVenue(eventDetail.getVenues().get(0).get$ref()));
@@ -121,7 +126,7 @@ public class EventsListingTask {
 
     public String getEventTeam(String $ref){
         Team team = restTemplate.getForObject($ref , Team.class);
-        return team.getDisplayName();
+        return teamNameService.getTeamName(team.getId());
     }
 
     public String getEventScore(String $ref){

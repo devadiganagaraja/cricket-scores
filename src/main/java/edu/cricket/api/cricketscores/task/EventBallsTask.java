@@ -117,10 +117,10 @@ public class EventBallsTask {
                         if (overCommentaryOptional.isPresent()) {
                             OverCommentary overCommentary = overCommentaryOptional.get();
 
-                            if (overCommentary.getOverSummary().getOversUnique() < ballDetail.getOver().getUnique()) {
+                            if (overCommentary.getOverSummary().getOversUnique() <= ballDetail.getOver().getUnique()) {
                                 overCommentary.setOverSummary(bbbAggregate.getOverSummary());
                             }
-                            boolean added = overCommentary.getBallCommentarySet().add(createBallCommentary(bbbAggregate));
+                            overCommentary.getBallCommentarySet().add(createBallCommentary(bbbAggregate));
                         } else {
                             createOverCommentary(bbbAggregate, inningsCommentary);
                         }
