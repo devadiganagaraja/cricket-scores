@@ -2,40 +2,21 @@ package edu.cricket.api.cricketscores.rest.response.model;
 
 import java.util.List;
 
-public class Player {
-    private long playerId;
-    private String playerName;
-    private String dateOfBirth;
+public class AthleteInfo {
+    private String athleteName;
     private int age;
     private String battingStyle;
-    private String bowlingStyle = "off spin";
+    private String bowlingStyle;
     private String country;
 
     private List<PlayerStats> playerStats;
 
-
-    public long getPlayerId() {
-        return playerId;
+    public String getAthleteName() {
+        return athleteName;
     }
 
-    public void setPlayerId(long playerId) {
-        this.playerId = playerId;
-    }
-
-    public String getPlayerName() {
-        return playerName;
-    }
-
-    public void setPlayerName(String playerName) {
-        this.playerName = playerName;
-    }
-
-    public String getDateOfBirth() {
-        return dateOfBirth;
-    }
-
-    public void setDateOfBirth(String dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
+    public void setAthleteName(String athleteName) {
+        this.athleteName = athleteName;
     }
 
     public int getAge() {
@@ -80,10 +61,8 @@ public class Player {
 
     @Override
     public String toString() {
-        return "Player{" +
-                "playerId=" + playerId +
-                ", playerName='" + playerName + '\'' +
-                ", dateOfBirth='" + dateOfBirth + '\'' +
+        return "AthleteInfo{" +
+                "athleteName='" + athleteName + '\'' +
                 ", age=" + age +
                 ", battingStyle='" + battingStyle + '\'' +
                 ", bowlingStyle='" + bowlingStyle + '\'' +

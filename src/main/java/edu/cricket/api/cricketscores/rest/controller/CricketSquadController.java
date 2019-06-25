@@ -47,7 +47,7 @@ public class CricketSquadController {
         eventBestEleven.setSquad1(squad1);
         Squad squad2 = new Squad();
         squad2.setTeamName(event.getTeam2().getTeamName());
-        long sourceTeam2Id = Long.valueOf(event.getTeam1().getTeamName().split(":")[1])/13;
+        long sourceTeam2Id = Long.valueOf(event.getTeam2().getTeamName().split(":")[1])/13;
         squad2.setPlayers(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam2Id, event.getInternationalClassId()));
         eventBestEleven.setSquad2(squad2);
         return eventBestEleven;

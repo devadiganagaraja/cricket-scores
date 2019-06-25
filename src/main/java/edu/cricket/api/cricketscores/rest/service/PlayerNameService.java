@@ -20,14 +20,14 @@ public class PlayerNameService {
     }
 
 
-    public String getPlayerName(Long sourceTeamId){
-        long playerId = getPlayerId(sourceTeamId);
+    public String getPlayerName(Long sourcePlayerName){
+        long playerId = getPlayerId(sourcePlayerName);
         try {
 
             if(playerNameCache.containsKey(playerId)){
                 return playerNameCache.get(playerId);
             }else{
-                Athlete athlete = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/athletes/"+sourceTeamId, Athlete.class);
+                Athlete athlete = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/athletes/"+sourcePlayerName, Athlete.class);
                 String displayNameWithId = athlete.getDisplayName()+":"+(playerId*13);
                 playerNameCache.putIfAbsent(playerId, displayNameWithId);
                 return displayNameWithId;
