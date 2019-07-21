@@ -51,6 +51,7 @@ public class EventsListingTask {
 
     private List<String> getEvents(){
         EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/events?eventsback=2", EventListing.class);
+
         return eventListing.getItems().stream().map(ref -> ref.get$ref()).collect(Collectors.toList());
     }
 

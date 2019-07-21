@@ -1,10 +1,14 @@
 package edu.cricket.api.cricketscores.rest.response.model;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class EventBestEleven {
     private Event event;
     private Squad squad1;
     private Squad squad2;
-    private Squad userSquad;
+    private UserSquad userSquad;
+
 
     public Event getEvent() {
         return event;
@@ -30,11 +34,11 @@ public class EventBestEleven {
         this.squad2 = squad2;
     }
 
-    public Squad getUserSquad() {
+    public UserSquad getUserSquad() {
         return userSquad;
     }
 
-    public void setUserSquad(Squad userSquad) {
+    public void setUserSquad(UserSquad userSquad) {
         this.userSquad = userSquad;
     }
 }

@@ -4,7 +4,10 @@ import java.util.List;
 
 public class Squad {
     private String teamName;
-    private List<String> players;
+    private List<SquadPlayer> players;
+
+    private int totalPoints;
+
 
     public String getTeamName() {
         return teamName;
@@ -14,12 +17,21 @@ public class Squad {
         this.teamName = teamName;
     }
 
-    public List<String> getPlayers() {
+    public List<SquadPlayer> getPlayers() {
         return players;
     }
 
-    public void setPlayers(List<String> players) {
+    public void setPlayers(List<SquadPlayer> players) {
         this.players = players;
+    }
+
+
+    public int getTotalPoints() {
+        return totalPoints;
+    }
+
+    public void setTotalPoints(int totalPoints) {
+        this.totalPoints = totalPoints;
     }
 
     @Override
@@ -27,6 +39,7 @@ public class Squad {
         return "Squad{" +
                 "teamName='" + teamName + '\'' +
                 ", players=" + players +
+                ", totalPoints=" + totalPoints +
                 '}';
     }
 }

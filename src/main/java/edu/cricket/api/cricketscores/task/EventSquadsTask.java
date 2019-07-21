@@ -1,6 +1,7 @@
 package edu.cricket.api.cricketscores.task;
 
 import edu.cricket.api.cricketscores.rest.response.model.Event;
+import edu.cricket.api.cricketscores.rest.response.model.SquadPlayer;
 import edu.cricket.api.cricketscores.rest.service.PlayerNameService;
 import edu.cricket.api.cricketscores.rest.source.model.EventListing;
 import org.slf4j.Logger;
@@ -32,11 +33,11 @@ public class EventSquadsTask {
 
     private static final Logger log = LoggerFactory.getLogger(EventSquadsTask.class);
 
-    public List<String> getLeagueTeamPlayers(long leagueId, long teamId, int classId) {
+    public List<SquadPlayer> getLeagueTeamPlayers(long leagueId, long teamId, int classId) {
         String ref = "http://core.espnuk.org/v2/sports/cricket/leagues/"+leagueId+"/teams/"+teamId+"/athletes?internationalClassId="+classId;
         EventListing athleteListing = restTemplate.getForObject(ref , EventListing.class);
 
         logger.info("ref : {}, athleteListing:{}",ref);
-        return athleteListing.getItems().stream().map($ref -> playerNameService.getPlayerName(Long.valueOf($ref.get$ref().split("athletes/")[1]))).collect(Collectors.toList());
+        return athleteListing.getItems().stream().map($ref -> new SquadPlayer(playerNameService.getPlayerName(Long.valueOf($ref.get$ref().split("athletes/")[1])))).collect(Collectors.toList());
     }
 }

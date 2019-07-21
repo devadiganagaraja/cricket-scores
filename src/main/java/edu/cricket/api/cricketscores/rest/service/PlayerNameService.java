@@ -28,7 +28,7 @@ public class PlayerNameService {
                 return playerNameCache.get(playerId);
             }else{
                 Athlete athlete = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/athletes/"+sourcePlayerName, Athlete.class);
-                String displayNameWithId = athlete.getDisplayName()+":"+(playerId*13);
+                String displayNameWithId = athlete.getDisplayName()+":"+(playerId);
                 playerNameCache.putIfAbsent(playerId, displayNameWithId);
                 return displayNameWithId;
             }
