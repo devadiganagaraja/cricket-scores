@@ -1,6 +1,7 @@
 package edu.cricket.api.cricketscores.rest.response.model;
 
 import java.util.List;
+import java.util.Objects;
 
 public class Squad {
     private String teamName;
@@ -41,5 +42,19 @@ public class Squad {
                 ", players=" + players +
                 ", totalPoints=" + totalPoints +
                 '}';
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Squad squad = (Squad) o;
+        return Objects.equals(teamName, squad.teamName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(teamName);
     }
 }

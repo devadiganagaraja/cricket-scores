@@ -1,11 +1,14 @@
 package edu.cricket.api.cricketscores.task;
 
-import edu.cricket.api.cricketscores.rest.response.model.Event;
-import edu.cricket.api.cricketscores.rest.response.model.EventInfo;
-import edu.cricket.api.cricketscores.rest.response.model.League;
+import edu.cricket.api.cricketscores.domain.*;
+import edu.cricket.api.cricketscores.repository.EventRepository;
+import edu.cricket.api.cricketscores.repository.LeagueRepository;
+import edu.cricket.api.cricketscores.rest.response.model.*;
 import edu.cricket.api.cricketscores.rest.service.PlayerNameService;
 import edu.cricket.api.cricketscores.rest.service.TeamNameService;
 import edu.cricket.api.cricketscores.rest.source.model.*;
+import edu.cricket.api.cricketscores.rest.source.model.Competitor;
+import edu.cricket.api.cricketscores.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,9 @@ public class EventsListingTask {
     EventScoreCardTask eventScoreCardTask;
 
     @Autowired
+    LeagueListingTask leagueListingTask;
+
+    @Autowired
     PlayerNameService playerNameService;
 
     @Autowired
@@ -32,7 +38,6 @@ public class EventsListingTask {
 
     RestTemplate restTemplate = new RestTemplate();
 
-
     @Autowired
     Map<String,Event> liveEvents;
 
@@ -41,6 +46,7 @@ public class EventsListingTask {
         Map<String, Event> eventMap = new ConcurrentHashMap<>();
         getEvents().forEach($ref ->  {
             Event event = getEventData($ref);
+            leagueListingTask.updateLeagueForEvent(event);
             if(null != event) {
                 eventMap.put(event.getEventId(), event);
             }
@@ -50,14 +56,14 @@ public class EventsListingTask {
     }
 
     private List<String> getEvents(){
-        EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/events?eventsback=2", EventListing.class);
+        EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/events", EventListing.class);
 
         return eventListing.getItems().stream().map(ref -> ref.get$ref()).collect(Collectors.toList());
     }
 
 
 
-    private Event getEventData(String $ref) {
+    public Event getEventData(String $ref) {
 
         EventDetail eventDetail = restTemplate.getForObject($ref, EventDetail.class);
 
@@ -66,8 +72,10 @@ public class EventsListingTask {
         if(competition.getCompetitionClass().getInternationalClassId() > 0) {
             Event event = new Event();
             event.setInternationalClassId(competition.getCompetitionClass().getInternationalClassId());
+            event.setGeneralClassId(competition.getCompetitionClass().getGeneralClassId());
             event.setEventId(String.valueOf(Integer.parseInt(competition.getId())*13));
             event.setStartDate(eventDetail.getDate());
+            event.setEndDate(eventDetail.getEndDate());
             event.setVenue(getEventVenue(eventDetail.getVenues().get(0).get$ref()));
 
             setSeason(eventDetail, event);
@@ -113,11 +121,11 @@ public class EventsListingTask {
 
     private void setSeason(EventDetail eventDetail, Event event) {
         Season season = restTemplate.getForObject(eventDetail.getSeason().get$ref() , Season.class);
-        event.setLeagueId(season.getId());
+        event.setLeagueId(season.getId()*13);
         event.setLeagueStartDate(season.getStartDate());
         event.setLeagueEndDate(season.getEndDate());
         event.setLeagueName(season.getName());
-        event.setLeagueYear(season.getYear());
+        event.setLeagueYear(String.valueOf(season.getYear()));
     }
 
     public String getEventVenue(String $ref){
@@ -135,7 +143,7 @@ public class EventsListingTask {
         return  score.getValue();
     }
 
-    public Set<League> getLiveEvents(){
+    public List<League> getLiveEvents(){
 
         List<Event> eventInfos =  new ArrayList<>(liveEvents.values());
         Set<League> leagues = new HashSet<>();
@@ -147,7 +155,7 @@ public class EventsListingTask {
                 if(leagues.contains(eventLeague)){
                     leagues.forEach(league -> {
                         if (league.getLeagueId() == event.getLeagueId()) {
-                            league.getEventList().add(event);
+                            league.getEventSet().add(event);
                         }
                     });
                 }else {
@@ -157,25 +165,16 @@ public class EventsListingTask {
                     newLeague.setLeagueStartDate(event.getLeagueStartDate());
                     newLeague.setLeagueEndDate(event.getLeagueEndDate());
                     newLeague.setLeagueYear(event.getLeagueYear());
-                    newLeague.setEventList(new ArrayList<>());
-                    newLeague.getEventList().add(event);
+                    newLeague.setClassId(event.getInternationalClassId() > 0 ? event.getInternationalClassId() : event.getGeneralClassId());
+                    newLeague.setEventSet(new HashSet<>());
+                    newLeague.getEventSet().add(event);
                     leagues.add(newLeague);
                 }
             });
         }
-        return leagues;
-    }
-
-    private void createNewLeagueForEvent(Set<League> leagues, Event event) {
-        League newLeague = new League();
-        newLeague.setLeagueId(event.getLeagueId());
-        newLeague.setLeagueName(event.getLeagueName());
-        newLeague.setLeagueStartDate(event.getLeagueStartDate());
-        newLeague.setLeagueEndDate(event.getLeagueEndDate());
-        newLeague.setLeagueYear(event.getLeagueYear());
-        newLeague.setEventList(new ArrayList<>());
-        newLeague.getEventList().add(event);
-        leagues.add(newLeague);
+        List<League> leaguesList =  new ArrayList<>(leagues);
+        leaguesList.sort(Comparator.comparing(League::getClassId));
+        return leaguesList;
     }
 
 }

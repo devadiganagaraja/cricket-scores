@@ -137,4 +137,26 @@ public class PlayerPoints {
     public void setStumpedPoints(float stumpedPoints) {
         this.stumpedPoints = stumpedPoints;
     }
+
+
+    @Override
+    public String toString() {
+        return "PlayerPoints{" +
+                "points=" + points +
+                ", runs=" + runs +
+                ", runsPoints=" + runsPoints +
+                ", wickets=" + wickets +
+                ", wicketsPoints=" + wicketsPoints +
+                ", sixes=" + sixes +
+                ", sixesPoints=" + sixesPoints +
+                ", fours=" + fours +
+                ", foursPoints=" + foursPoints +
+                ", maidens=" + maidens +
+                ", maidensPoints=" + maidensPoints +
+                ", catches=" + catches +
+                ", catchesPoints=" + catchesPoints +
+                ", stumped=" + stumped +
+                ", stumpedPoints=" + stumpedPoints +
+                '}';
+    }
 }

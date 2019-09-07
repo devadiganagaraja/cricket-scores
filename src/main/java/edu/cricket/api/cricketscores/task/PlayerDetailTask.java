@@ -10,6 +10,7 @@ import edu.cricket.api.cricketscores.rest.source.model.Athlete;
 import edu.cricket.api.cricketscores.rest.source.model.AthleteStat;
 import edu.cricket.api.cricketscores.rest.source.model.Category;
 import edu.cricket.api.cricketscores.rest.source.model.Style;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +61,9 @@ public class PlayerDetailTask {
             String ref = "http://core.espnuk.org/v2/sports/cricket/athletes/" + sourcePlayerId;
             Athlete athlete = restTemplate.getForObject(ref, Athlete.class);
             AthleteInfo athleteInfo = new AthleteInfo();
+            if(null != athlete.getPosition()) {
+                athleteInfo.setPlayerType(getBattingStyle(athlete.getPosition().getName()));
+            }
             athleteInfo.setAthleteName(playerNameService.getPlayerName(sourcePlayerId));
             athleteInfo.setAge(athlete.getAge());
 
@@ -168,6 +172,17 @@ public class PlayerDetailTask {
         return battingStyle.toString();
     }
 
+    public static  String getBattingStyle(String type) {
+        if(StringUtils.isNotBlank(type)){
+            if(type.toLowerCase().contains("batsman")) return "Batsman";
+            if(type.toLowerCase().contains("bowler")) return "Bowler";
+            if(type.toLowerCase().contains("wicketkeeper")) return "Wicketkeeper";
+
+        }
+        return "Allrounder";
+
+    }
+
     private String getBowlingStyle(List<Style> styles) {
         StringBuilder bowlingStyle = new StringBuilder();
         styles.forEach(style -> {
@@ -178,9 +193,10 @@ public class PlayerDetailTask {
 
                 if(style.getDescription().toLowerCase().contains("leg")) bowlingStyle.append("Leg Spin ");
                 else if(style.getDescription().toLowerCase().contains("off")) bowlingStyle.append("Off Spin ");
-                else if(style.getDescription().toLowerCase().contains("off")) bowlingStyle.append("Off Spin ");
-                else if(style.getDescription().toLowerCase().contains("medium")) bowlingStyle.append("Medium Fast ");
-                else bowlingStyle.append("Fast");
+                else if(style.getDescription().toLowerCase().contains("fast-medium")) bowlingStyle.append("Fast ");
+                else if(style.getDescription().toLowerCase().contains("medium-fast")) bowlingStyle.append("Medium Fast ");
+                else if(style.getDescription().toLowerCase().contains("slow")) bowlingStyle.append("Spin");
+                else if(style.getDescription().toLowerCase().contains("fast")) bowlingStyle.append("Fast");
 
                 return;
             }

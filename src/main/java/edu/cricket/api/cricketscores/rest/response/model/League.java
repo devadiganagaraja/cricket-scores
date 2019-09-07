@@ -2,14 +2,16 @@ package edu.cricket.api.cricketscores.rest.response.model;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class League {
     private long leagueId;
     private String leagueName;
     private String leagueStartDate;
     private String leagueEndDate;
-    private int leagueYear;
-    private List<Event> eventList;
+    private String leagueYear;
+    private Set<Event> eventSet;
+    private int classId;
 
     public long getLeagueId() {
         return leagueId;
@@ -43,22 +45,30 @@ public class League {
         this.leagueEndDate = leagueEndDate;
     }
 
-    public int getLeagueYear() {
+    public String getLeagueYear() {
         return leagueYear;
     }
 
-    public void setLeagueYear(int leagueYear) {
+    public void setLeagueYear(String leagueYear) {
         this.leagueYear = leagueYear;
     }
 
-    public List<Event> getEventList() {
-        return eventList;
+
+    public Set<Event> getEventSet() {
+        return eventSet;
     }
 
-    public void setEventList(List<Event> eventList) {
-        this.eventList = eventList;
+    public void setEventSet(Set<Event> eventSet) {
+        this.eventSet = eventSet;
     }
 
+    public int getClassId() {
+        return classId;
+    }
+
+    public void setClassId(int classId) {
+        this.classId = classId;
+    }
 
     @Override
     public String toString() {
@@ -68,7 +78,7 @@ public class League {
                 ", leagueStartDate='" + leagueStartDate + '\'' +
                 ", leagueEndDate='" + leagueEndDate + '\'' +
                 ", leagueYear=" + leagueYear +
-                ", eventList=" + eventList +
+                ", eventSet=" + eventSet +
                 '}';
     }
 

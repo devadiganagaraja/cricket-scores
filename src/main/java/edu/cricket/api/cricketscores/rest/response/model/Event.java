@@ -2,10 +2,13 @@ package edu.cricket.api.cricketscores.rest.response.model;
 
 import edu.cricket.api.cricketscores.rest.source.model.Type;
 
+import java.util.Objects;
+
 public class Event {
     private String venue;
     private String eventId;
     private String startDate;
+    private String endDate;
     private Competitor team1;
     private Competitor team2;
     private String type;
@@ -20,8 +23,9 @@ public class Event {
     private String leagueName;
     private String leagueStartDate;
     private String leagueEndDate;
-    private int leagueYear;
+    private String leagueYear;
     private int internationalClassId;
+    private int generalClassId;
 
 
     public String getEventId() {
@@ -161,11 +165,11 @@ public class Event {
         this.leagueEndDate = leagueEndDate;
     }
 
-    public int getLeagueYear() {
+    public String getLeagueYear() {
         return leagueYear;
     }
 
-    public void setLeagueYear(int leagueYear) {
+    public void setLeagueYear(String leagueYear) {
         this.leagueYear = leagueYear;
     }
 
@@ -177,4 +181,63 @@ public class Event {
     public void setInternationalClassId(int internationalClassId) {
         this.internationalClassId = internationalClassId;
     }
+
+
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    @Override
+    public String toString() {
+        return "Event{" +
+                "venue='" + venue + '\'' +
+                ", eventId='" + eventId + '\'' +
+                ", startDate='" + startDate + '\'' +
+                ", endDate='" + endDate + '\'' +
+                ", team1=" + team1 +
+                ", team2=" + team2 +
+                ", type='" + type + '\'' +
+                ", note='" + note + '\'' +
+                ", manOfTheMatch='" + manOfTheMatch + '\'' +
+                ", period=" + period +
+                ", dayNumber=" + dayNumber +
+                ", description='" + description + '\'' +
+                ", detail='" + detail + '\'' +
+                ", state='" + state + '\'' +
+                ", leagueId=" + leagueId +
+                ", leagueName='" + leagueName + '\'' +
+                ", leagueStartDate='" + leagueStartDate + '\'' +
+                ", leagueEndDate='" + leagueEndDate + '\'' +
+                ", leagueYear='" + leagueYear + '\'' +
+                ", internationalClassId=" + internationalClassId +
+                ", generalClassId=" + generalClassId +
+                '}';
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Event event = (Event) o;
+        return Objects.equals(eventId, event.eventId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(eventId);
+    }
+
+    public int getGeneralClassId() {
+        return generalClassId;
+    }
+
+    public void setGeneralClassId(int generalClassId) {
+        this.generalClassId = generalClassId;
+    }
+
 }

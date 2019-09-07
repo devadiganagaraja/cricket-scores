@@ -1,22 +1,24 @@
 package edu.cricket.api.cricketscores.rest.controller;
 
+import edu.cricket.api.cricketscores.domain.EventPlayerPointsAggregate;
 import edu.cricket.api.cricketscores.domain.UserEventSquadAggregate;
+import edu.cricket.api.cricketscores.repository.EventPlayerPointsRepository;
 import edu.cricket.api.cricketscores.repository.UserEventSquadRepository;
 import edu.cricket.api.cricketscores.rest.request.BestEleven;
-import edu.cricket.api.cricketscores.rest.request.UserCredentials;
 import edu.cricket.api.cricketscores.rest.response.model.*;
 import edu.cricket.api.cricketscores.rest.service.PlayerNameService;
 import edu.cricket.api.cricketscores.rest.service.TeamNameService;
 import edu.cricket.api.cricketscores.rest.service.UserService;
-import edu.cricket.api.cricketscores.task.EventScoreCardTask;
 import edu.cricket.api.cricketscores.task.EventSquadsTask;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 public class CricketSquadController {
@@ -45,13 +47,56 @@ public class CricketSquadController {
     @Autowired
     UserEventSquadRepository userEventSquadRepository;
 
+    @Autowired
+    EventPlayerPointsRepository eventPlayerPointsRepository;
+
+    @CrossOrigin
+    @RequestMapping("/bestEleven/leaderboard/event/{eventId}")
+    public List<LeaderBoard> leaderBoard(@PathVariable(value="eventId") String eventId) {
+        Optional<EventPlayerPointsAggregate> eventPlayerPointsAggregateOptional = eventPlayerPointsRepository.findById(eventId);
+
+        List<LeaderBoard> leaderBoards = new ArrayList<>();
+        if(eventPlayerPointsAggregateOptional.isPresent()) {
+            EventPlayerPointsAggregate eventPlayerPointsAggregate = eventPlayerPointsAggregateOptional.get();
+            UserEventSquadAggregate userEventSquadAggregateEx = new UserEventSquadAggregate();
+            userEventSquadAggregateEx.setEventId(eventId);
+            List<UserEventSquadAggregate> userEventSquadAggregateList = userEventSquadRepository.findAll(Example.of(userEventSquadAggregateEx));
+            if (null != userEventSquadAggregateList) {
+                userEventSquadAggregateList.forEach(userEventSquadAggregate -> {
+                    if(null != userEventSquadAggregate && null != userEventSquadAggregate.getUserSquadPlayers()){
+                        LeaderBoard leaderBoard = new LeaderBoard();
+                        leaderBoard.setUserName(userEventSquadAggregate.getUserName());
+                        userEventSquadAggregate.getUserSquadPlayers().forEach(userSquadPlayer ->  {
+                            if(eventPlayerPointsAggregate.getPlayerPointsMap().containsKey(playerNameService.getPlayerId(userSquadPlayer.getPlayerName()))) {
+                                leaderBoard.setPoints(leaderBoard.getPoints()+ (eventPlayerPointsAggregate.getPlayerPointsMap().get(playerNameService.getPlayerId(userSquadPlayer.getPlayerName())).getPoints()));
+                            }
+                        });
+                        leaderBoards.add(leaderBoard);
+                    }
+
+                });
+            }
+
+        }
+        leaderBoards.sort(Comparator.comparing(LeaderBoard::getPoints, Comparator.reverseOrder()));
+        AtomicInteger atomicInteger = new AtomicInteger(1);
+        leaderBoards.forEach(leaderBoard -> leaderBoard.setPosition(atomicInteger.getAndIncrement()));
+
+        return leaderBoards;
+
+
+    }
+
     @CrossOrigin
     @RequestMapping("/bestEleven/userName/{userName}/event/{eventId}")
     public EventBestEleven getBestEleven(@PathVariable(value="userName") String userName, @PathVariable(value="eventId") String eventId) {
 
+        logger.info("getBestEleven==>");
+
         EventBestEleven eventBestEleven = new EventBestEleven();
         Event event = liveEvents.get(eventId);
         if(null != event) {
+            logger.info("getBestEleven==>event :{}",event);
             eventBestEleven.setEvent(event);
             Squad squad1 = new Squad();
             squad1.setTeamName(event.getTeam1().getTeamName());
@@ -69,7 +114,29 @@ public class CricketSquadController {
             Optional<UserEventSquadAggregate> userEventSquadAggregateOptional = userEventSquadRepository.findById(userName + ":" + eventId);
             if (userEventSquadAggregateOptional.isPresent()) {
                 UserSquad userSquad = new UserSquad();
-                userSquad.setUserSquadPlayers(userEventSquadAggregateOptional.get().getUserSquadPlayers());
+                List<UserSquadPlayer> userSquadPlayers = userEventSquadAggregateOptional.get().getUserSquadPlayers();
+                logger.info("eventPlayerPointsRepository  => eventId :{}", eventId);
+                Optional<EventPlayerPointsAggregate> eventPlayerPointsAggregateOptional = eventPlayerPointsRepository.findById(eventId);
+                if(eventPlayerPointsAggregateOptional.isPresent()){
+                    EventPlayerPointsAggregate eventPlayerPointsAggregate = eventPlayerPointsAggregateOptional.get();
+                    Map<Long, PlayerPoints> playerPointsMap = eventPlayerPointsAggregate.getPlayerPointsMap();
+                    if(null != playerPointsMap){
+                        userSquadPlayers.stream().forEach(userSquadPlayer -> {
+
+                            logger.info("eventPlayerPointsRepository  => userSquadPlayer.getPlayerName() :{}", userSquadPlayer.getPlayerName());
+
+                            long squadPlayerId = Long.valueOf(userSquadPlayer.getPlayerName().split(":")[1]);
+                            if(playerPointsMap.containsKey(squadPlayerId)){
+                                PlayerPoints playerPoints = playerPointsMap.get(squadPlayerId);
+                                logger.info("eventPlayerPointsRepository  => userSquadPlayer.getPlayerName() :{}, playerPoints :{}", userSquadPlayer.getPlayerName(), playerPoints);
+                                playerPoints.setPoints(userSquadPlayer.isCaptain()? playerPoints.getPoints()*3 : userSquadPlayer.isVoiceCaptain() ? playerPoints.getPoints()*2 :  playerPoints.getPoints());
+                                userSquadPlayer.setPoints(playerPoints);
+                                userSquad.setTotalPoints(userSquad.getTotalPoints()+playerPoints.getPoints());
+                            }
+                        });
+                    }
+                }
+                userSquad.setUserSquadPlayers(userSquadPlayers);
                 eventBestEleven.setUserSquad(userSquad);
             }
 
@@ -123,6 +190,8 @@ public class CricketSquadController {
     private void saveUserEventSquad(String userName, String eventId, List<UserSquadPlayer> userSquadPlayers){
         UserEventSquadAggregate userEventSquadAggregate = new UserEventSquadAggregate();
         userEventSquadAggregate.setUserEventId(userName+":"+eventId);
+        userEventSquadAggregate.setEventId(eventId);
+        userEventSquadAggregate.setUserName(userName);
         userEventSquadAggregate.setUserSquadPlayers(userSquadPlayers);
         userEventSquadRepository.save(userEventSquadAggregate);
     }

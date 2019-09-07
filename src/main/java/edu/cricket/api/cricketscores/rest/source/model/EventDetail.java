@@ -7,6 +7,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class EventDetail {
     private String date;
+    private String endDate;
     private List<Competition> competitions;
     private List<Ref> venues;
     private Ref season;
@@ -17,6 +18,14 @@ public class EventDetail {
 
     public void setDate(String date) {
         this.date = date;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
     }
 
     public List<Competition> getCompetitions() {

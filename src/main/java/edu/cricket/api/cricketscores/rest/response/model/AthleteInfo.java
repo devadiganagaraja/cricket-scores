@@ -8,6 +8,7 @@ public class AthleteInfo {
     private String battingStyle;
     private String bowlingStyle;
     private String country;
+    private String playerType;
 
     private List<PlayerStats> playerStats;
 
@@ -51,6 +52,14 @@ public class AthleteInfo {
         this.country = country;
     }
 
+    public String getPlayerType() {
+        return playerType;
+    }
+
+    public void setPlayerType(String playerType) {
+        this.playerType = playerType;
+    }
+
     public List<PlayerStats> getPlayerStats() {
         return playerStats;
     }
@@ -67,6 +76,7 @@ public class AthleteInfo {
                 ", battingStyle='" + battingStyle + '\'' +
                 ", bowlingStyle='" + bowlingStyle + '\'' +
                 ", country='" + country + '\'' +
+                ", playerType='" + playerType + '\'' +
                 ", playerStats=" + playerStats +
                 '}';
     }

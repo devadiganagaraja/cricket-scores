@@ -10,6 +10,8 @@ public class Athlete {
     private List<Style> styles;
     private long country;
 
+    private Position position;
+
     public String getDisplayName() {
         return displayName;
     }
@@ -43,6 +45,14 @@ public class Athlete {
         this.styles = styles;
     }
 
+    public Position getPosition() {
+        return position;
+    }
+
+    public void setPosition(Position position) {
+        this.position = position;
+    }
+
     public long getCountry() {
         return country;
     }
@@ -59,6 +69,7 @@ public class Athlete {
                 ", gender='" + gender + '\'' +
                 ", styles=" + styles +
                 ", country=" + country +
+                ", position=" + position +
                 '}';
     }
 }

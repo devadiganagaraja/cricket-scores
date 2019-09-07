@@ -6,7 +6,7 @@ import java.util.List;
 public class UserSquad {
 
     List<UserSquadPlayer> userSquadPlayers = new ArrayList<>();
-    int totalPoints = 100;
+    float totalPoints;
 
     public List<UserSquadPlayer> getUserSquadPlayers() {
         return userSquadPlayers;
@@ -16,11 +16,11 @@ public class UserSquad {
         this.userSquadPlayers = userSquadPlayers;
     }
 
-    public int getTotalPoints() {
+    public float getTotalPoints() {
         return totalPoints;
     }
 
-    public void setTotalPoints(int totalPoints) {
+    public void setTotalPoints(float totalPoints) {
         this.totalPoints = totalPoints;
     }
 }

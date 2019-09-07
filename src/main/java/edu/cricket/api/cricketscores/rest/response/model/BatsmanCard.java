@@ -8,6 +8,8 @@ public class BatsmanCard implements Comparable<BatsmanCard>{
     private String playerName;
     private String balls;
     private String runs;
+    private String fours;
+    private String sixes;
     private String battingDescription;
     private Integer position;
     private boolean batted;
@@ -36,6 +38,22 @@ public class BatsmanCard implements Comparable<BatsmanCard>{
 
     public void setRuns(String runs) {
         this.runs = runs;
+    }
+
+    public String getFours() {
+        return fours;
+    }
+
+    public void setFours(String fours) {
+        this.fours = fours;
+    }
+
+    public String getSixes() {
+        return sixes;
+    }
+
+    public void setSixes(String sixes) {
+        this.sixes = sixes;
     }
 
     public String getBattingDescription() {

@@ -16,18 +16,6 @@ public class UserService {
 
     public UserInfo getUserInfoByUserNameAndPassword(String userName, String password){
 
-        UserAggregate userAggregate1 = new UserAggregate();
-        userAggregate1.setUserName("nagaraj");
-        userAggregate1.setMobileNo("9035969892");
-        userAggregate1.setUserPassword("123");
-        userRepository.save(userAggregate1);
-
-        UserAggregate userAggregate2 = new UserAggregate();
-        userAggregate2.setUserName("abhijith");
-        userAggregate2.setMobileNo("9986326165");
-        userAggregate2.setUserPassword("123");
-        userRepository.save(userAggregate2);
-
         UserInfo userInfo = new UserInfo();
         Optional<UserAggregate> userAggregateOptional = userRepository.findById(userName);
         if(userAggregateOptional.isPresent() && userAggregateOptional.get().getUserPassword().equals(password)){
@@ -44,5 +32,25 @@ public class UserService {
         }
 
         return userInfo;
+    }
+
+
+    public UserInfo registerUser(String userName, String password, String phone){
+        UserInfo userInfo = new UserInfo();
+        Optional<UserAggregate> userAggregateOptional = userRepository.findById(userName);
+        if(! userAggregateOptional.isPresent()){
+            UserAggregate userAggregate = new UserAggregate();
+            userAggregate.setUserName(userName);
+            userAggregate.setMobileNo(phone);
+            userAggregate.setUserPassword(password);
+            userRepository.save(userAggregate);
+            userInfo.setStatusCode(200);
+            userInfo.setStatus("Success");
+        }else{
+            userInfo.setStatusCode(200);
+            userInfo.setStatus("Username already exists");
+        }
+        return userInfo;
+
     }
 }

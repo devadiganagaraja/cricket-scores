@@ -10,10 +10,29 @@ import java.util.List;
 public class UserEventSquadAggregate {
     @Id
     private String userEventId;
+    private String eventId;
+    private String userName;
     private List<UserSquadPlayer> userSquadPlayers;
 
     public String getUserEventId() {
         return userEventId;
+    }
+
+
+    public String getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     public void setUserEventId(String userEventId) {

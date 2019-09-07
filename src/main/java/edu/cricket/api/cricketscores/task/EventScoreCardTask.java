@@ -2,7 +2,6 @@ package edu.cricket.api.cricketscores.task;
 
 import edu.cricket.api.cricketscores.domain.EventAggregate;
 import edu.cricket.api.cricketscores.repository.EventRepository;
-import edu.cricket.api.cricketscores.rest.response.MatchCommentary;
 import edu.cricket.api.cricketscores.rest.response.model.*;
 import edu.cricket.api.cricketscores.rest.service.PlayerNameService;
 import edu.cricket.api.cricketscores.rest.service.TeamNameService;
@@ -12,7 +11,6 @@ import edu.cricket.api.cricketscores.rest.source.model.Competitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -111,7 +109,7 @@ public class EventScoreCardTask {
                                         battingCard = inningsScoreCard.getBattingCard();
                                     }
                                     BatsmanCard batsmanCard = new BatsmanCard();
-                                    batsmanCard.setPlayerId(playerRoster.getPlayerId());
+                                    batsmanCard.setPlayerId(playerRoster.getPlayerId()*13);
                                     batsmanCard.setPlayerName(playerNameService.getPlayerName(playerRoster.getPlayerId()));
 
                                     try {
@@ -131,6 +129,14 @@ public class EventScoreCardTask {
 
                                                 case "runs":
                                                     batsmanCard.setRuns(stat.getDisplayValue());
+                                                    break;
+
+                                                case "fours":
+                                                    batsmanCard.setFours(stat.getDisplayValue());
+                                                    break;
+
+                                                case "sixes":
+                                                    batsmanCard.setSixes(stat.getDisplayValue());
                                                     break;
                                             }
                                         });
@@ -154,7 +160,7 @@ public class EventScoreCardTask {
                                         bowlingCard = inningsScoreCard.getBowlingCard();
                                     }
                                     BowlerCard bowlerCard = new BowlerCard();
-                                    bowlerCard.setPlayerId(playerRoster.getPlayerId());
+                                    bowlerCard.setPlayerId(playerRoster.getPlayerId()*13);
                                     bowlerCard.setPlayerName(playerNameService.getPlayerName(playerRoster.getPlayerId()));
                                     try {
                                         stats.getSplits().getCategories().get(0).getStats().stream().forEach(stat -> {
@@ -182,8 +188,24 @@ public class EventScoreCardTask {
                                                     bowlerCard.setWides(stat.getDisplayValue());
                                                     break;
 
+                                                case "byes":
+                                                    bowlerCard.setByes(stat.getDisplayValue());
+                                                    break;
+
+                                                case "legbyes":
+                                                    bowlerCard.setLegbyes(stat.getDisplayValue());
+                                                    break;
+
                                                 case "wickets":
                                                     bowlerCard.setWickets(stat.getDisplayValue());
+                                                    break;
+
+                                                case "stumped":
+                                                    bowlerCard.setStumped(stat.getDisplayValue());
+                                                    break;
+
+                                                case "caught":
+                                                    bowlerCard.setCaught(stat.getDisplayValue());
                                                     break;
                                             }
                                         });

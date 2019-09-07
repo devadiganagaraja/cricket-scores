@@ -1,6 +1,8 @@
 package edu.cricket.api.cricketscores.rest.service;
 
 import edu.cricket.api.cricketscores.rest.source.model.Athlete;
+import edu.cricket.api.cricketscores.task.PlayerDetailTask;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -19,6 +21,14 @@ public class PlayerNameService {
 
     }
 
+    public long getPlayerId(String playerName){
+        if(StringUtils.isNotBlank(playerName)){
+            return  Long.valueOf(playerName.split(":")[1]);
+        }
+        return 0;
+
+    }
+
 
     public String getPlayerName(Long sourcePlayerName){
         long playerId = getPlayerId(sourcePlayerName);
@@ -29,13 +39,16 @@ public class PlayerNameService {
             }else{
                 Athlete athlete = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/athletes/"+sourcePlayerName, Athlete.class);
                 String displayNameWithId = athlete.getDisplayName()+":"+(playerId);
+                if(null != athlete.getPosition()){
+                    displayNameWithId  = displayNameWithId.concat(":").concat(PlayerDetailTask.getBattingStyle(athlete.getPosition().getName()));
+                }
                 playerNameCache.putIfAbsent(playerId, displayNameWithId);
                 return displayNameWithId;
             }
         }catch (Exception e){
             e.printStackTrace();
         }
-        return "null:0";
+        return "null:0:null";
     }
 
 }

@@ -7,6 +7,7 @@ import edu.cricket.api.cricketscores.task.EventsListingTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -20,7 +21,7 @@ public class CricketScoresController {
 
     @CrossOrigin
     @RequestMapping("/scores")
-    public Set<League> getEvents() {
+    public List<League> getEvents() {
         return eventsListingTask.getLiveEvents();
     }
 

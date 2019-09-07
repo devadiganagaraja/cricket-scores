@@ -10,8 +10,12 @@ public class BowlerCard implements Comparable<BowlerCard>{
     private String maidens;
     private String wides;
     private String noballs;
+    private String byes;
+    private String legbyes;
     private Integer position;
     private boolean bowled;
+    private String stumped;
+    private String caught;
     private String live;
 
 
@@ -63,6 +67,22 @@ public class BowlerCard implements Comparable<BowlerCard>{
         this.playerId = playerId;
     }
 
+    public String getStumped() {
+        return stumped;
+    }
+
+    public void setStumped(String stumped) {
+        this.stumped = stumped;
+    }
+
+    public String getCaught() {
+        return caught;
+    }
+
+    public void setCaught(String caught) {
+        this.caught = caught;
+    }
+
     public String getConceded() {
         return conceded;
     }
@@ -73,6 +93,22 @@ public class BowlerCard implements Comparable<BowlerCard>{
 
     public String getMaidens() {
         return maidens;
+    }
+
+    public String getByes() {
+        return byes;
+    }
+
+    public void setByes(String byes) {
+        this.byes = byes;
+    }
+
+    public String getLegbyes() {
+        return legbyes;
+    }
+
+    public void setLegbyes(String legbyes) {
+        this.legbyes = legbyes;
     }
 
     public void setMaidens(String maidens) {
