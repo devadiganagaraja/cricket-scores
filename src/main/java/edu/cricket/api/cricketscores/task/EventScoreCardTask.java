@@ -145,7 +145,6 @@ public class EventScoreCardTask {
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
-                                    batsmanCard.setBatted(rosterLineScore.isBatting());
                                     batsmanCard.setPosition(rosterLineScore.getOrder()> 0 ? rosterLineScore.getOrder():unknownRosterIndex.incrementAndGet());
                                     logger.debug("playerRoster4 :{}, linescore {}, batsmanCard {}",playerRoster, rosterLineScore,batsmanCard);
 
@@ -306,15 +305,17 @@ public class EventScoreCardTask {
     }
 
     public void refreshLiveEventScoreCards() {
+        logger.info("liveEvents :{}", liveEvents.keySet());
 
         liveEvents.keySet().forEach(eventId -> {
-            if(liveEvents.containsKey(eventId) && "in".equalsIgnoreCase(liveEvents.get(eventId).getState())) {
+            if(liveEvents.containsKey(eventId) && ("in".equalsIgnoreCase(liveEvents.get(eventId).getState()) || "pre".equalsIgnoreCase(liveEvents.get(eventId).getState()))) {
                 ScoreCard scoreCard = getEventScoreCard(eventId);
                 eventsScoreCardCache.put(eventId, scoreCard);
                 EventAggregate eventAggregate = new EventAggregate();
                 eventAggregate.setId(eventId);
                 eventAggregate.setEventInfo(liveEvents.get(eventId));
                 eventAggregate.setScoreCard(scoreCard);
+                logger.info("eventAggregate:cc"+eventAggregate);
                 eventRepository.save(eventAggregate);
             }
         });

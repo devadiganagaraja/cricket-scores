@@ -51,12 +51,12 @@ public class EventBallsTask {
     public void refreshLiveEventBalls() {
 
         liveEvents.keySet().forEach(eventId -> {
-           if(liveEvents.containsKey(eventId) && "in".equalsIgnoreCase(liveEvents.get(eventId).getState())) {
+           if("in".equalsIgnoreCase(liveEvents.get(eventId).getState())) {
                 long sourceEventId = Long.parseLong(eventId)/13;
-                String $ref = "http://core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+sourceEventId+"/competitions/"+sourceEventId+"/details?limit=2000";
+                String $ref = "http://core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+sourceEventId+"/competitions/"+sourceEventId+"/details?limit=3000";
                 EventListing detailsListing = restTemplate.getForObject($ref, EventListing.class);
                 List<Ref> ballRefs = detailsListing.getItems();
-                for (int i = ballRefs.size() - 1; (i >= ballRefs.size()-6 && i >= 0) ; i--) {
+                for (int i = ballRefs.size() - 1; (i >= ballRefs.size()-3 && i >= 0) ; i--) {
                     if(null !=ballRefs.get(i)) {
                         BallDetail ballDetail = restTemplate.getForObject(ballRefs.get(i).get$ref(), BallDetail.class);
                         persistBall(ballDetail, eventId);
@@ -94,6 +94,53 @@ public class EventBallsTask {
         bbbAggregate.setDismissalSummary(ballDetail.getDismissal());
         pushToEventsCommsCache(ballDetail, bbbAggregate);
         ballRepository.save(bbbAggregate);
+    }
+
+    public MatchCommentary fetchBallDetailsForMatch(String eventId) {
+        if(eventsCommsCache.containsKey(eventId)) {
+            return eventsCommsCache.get(eventId);
+        }else{
+
+            List<BBBAggregate> bbbAggregates = ballRepository.findByEventId(eventId);
+            MatchCommentary matchCommentary = new MatchCommentary();
+
+            if(null != bbbAggregates){
+                bbbAggregates.forEach(bbbAggregate -> {
+
+                    Optional<InningsCommentary> inningsCommentaryOptional = matchCommentary.getInningsCommentary().stream().filter(inningsCommentary -> inningsCommentary.getInningSummary().getInningsNo() == bbbAggregate.getBallSummary().getInningsNo()).findFirst();
+
+                    if (inningsCommentaryOptional.isPresent()) {
+                        InningsCommentary inningsCommentary = inningsCommentaryOptional.get();
+
+
+                        if (inningsCommentary.getInningSummary().getOversUnique() < bbbAggregate.getInningSummary().getOversUnique()) {
+                            inningsCommentary.setInningSummary(bbbAggregate.getInningSummary());
+                        }
+                        Optional<OverCommentary> overCommentaryOptional = inningsCommentary.getOverCommentarySet().stream().filter(overCommentary -> overCommentary.getOverSummary().getOverNo() == bbbAggregate.getOverSummary().getOverNo()).findFirst();
+
+
+                        if (overCommentaryOptional.isPresent()) {
+                            OverCommentary overCommentary = overCommentaryOptional.get();
+
+                            if (overCommentary.getOverSummary().getOversUnique() <= bbbAggregate.getOverSummary().getOversUnique()) {
+                                overCommentary.setOverSummary(bbbAggregate.getOverSummary());
+                            }
+                            overCommentary.getBallCommentarySet().add(createBallCommentary(bbbAggregate));
+                        } else {
+                            createOverCommentary(bbbAggregate, inningsCommentary);
+                        }
+
+                    } else {
+                        createInningsCommentary(bbbAggregate, matchCommentary);
+                    }
+                });
+            }
+
+            //TODO need to implement details here
+            return matchCommentary;
+
+        }
+
     }
 
     private void pushToEventsCommsCache(BallDetail ballDetail, BBBAggregate bbbAggregate) {

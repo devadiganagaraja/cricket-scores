@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "balls")
-public class BBBAggregate {
+public class BBBAggregate extends BaseAggregate{
     @Id
     private String ballId;
 

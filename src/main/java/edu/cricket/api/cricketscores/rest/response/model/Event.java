@@ -2,13 +2,14 @@ package edu.cricket.api.cricketscores.rest.response.model;
 
 import edu.cricket.api.cricketscores.rest.source.model.Type;
 
+import java.util.Date;
 import java.util.Objects;
 
-public class Event {
+public class Event implements Comparable<Event>{
     private String venue;
     private String eventId;
-    private String startDate;
-    private String endDate;
+    private Date startDate;
+    private Date endDate;
     private Competitor team1;
     private Competitor team2;
     private String type;
@@ -21,8 +22,6 @@ public class Event {
     private String state;
     private long leagueId;
     private String leagueName;
-    private String leagueStartDate;
-    private String leagueEndDate;
     private String leagueYear;
     private int internationalClassId;
     private int generalClassId;
@@ -44,13 +43,7 @@ public class Event {
         this.venue = venue;
     }
 
-    public String getStartDate() {
-        return startDate;
-    }
 
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
-    }
 
     public Competitor getTeam1() {
         return team1;
@@ -149,22 +142,6 @@ public class Event {
         this.leagueName = leagueName;
     }
 
-    public String getLeagueStartDate() {
-        return leagueStartDate;
-    }
-
-    public void setLeagueStartDate(String leagueStartDate) {
-        this.leagueStartDate = leagueStartDate;
-    }
-
-    public String getLeagueEndDate() {
-        return leagueEndDate;
-    }
-
-    public void setLeagueEndDate(String leagueEndDate) {
-        this.leagueEndDate = leagueEndDate;
-    }
-
     public String getLeagueYear() {
         return leagueYear;
     }
@@ -184,40 +161,7 @@ public class Event {
 
 
 
-    public String getEndDate() {
-        return endDate;
-    }
 
-    @Override
-    public String toString() {
-        return "Event{" +
-                "venue='" + venue + '\'' +
-                ", eventId='" + eventId + '\'' +
-                ", startDate='" + startDate + '\'' +
-                ", endDate='" + endDate + '\'' +
-                ", team1=" + team1 +
-                ", team2=" + team2 +
-                ", type='" + type + '\'' +
-                ", note='" + note + '\'' +
-                ", manOfTheMatch='" + manOfTheMatch + '\'' +
-                ", period=" + period +
-                ", dayNumber=" + dayNumber +
-                ", description='" + description + '\'' +
-                ", detail='" + detail + '\'' +
-                ", state='" + state + '\'' +
-                ", leagueId=" + leagueId +
-                ", leagueName='" + leagueName + '\'' +
-                ", leagueStartDate='" + leagueStartDate + '\'' +
-                ", leagueEndDate='" + leagueEndDate + '\'' +
-                ", leagueYear='" + leagueYear + '\'' +
-                ", internationalClassId=" + internationalClassId +
-                ", generalClassId=" + generalClassId +
-                '}';
-    }
-
-    public void setEndDate(String endDate) {
-        this.endDate = endDate;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -240,4 +184,54 @@ public class Event {
         this.generalClassId = generalClassId;
     }
 
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+
+    @Override
+    public String toString() {
+        return "Event{" +
+                "venue='" + venue + '\'' +
+                ", eventId='" + eventId + '\'' +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                ", team1=" + team1 +
+                ", team2=" + team2 +
+                ", type='" + type + '\'' +
+                ", note='" + note + '\'' +
+                ", manOfTheMatch='" + manOfTheMatch + '\'' +
+                ", period=" + period +
+                ", dayNumber=" + dayNumber +
+                ", description='" + description + '\'' +
+                ", detail='" + detail + '\'' +
+                ", state='" + state + '\'' +
+                ", leagueId=" + leagueId +
+                ", leagueName='" + leagueName + '\'' +
+                ", leagueYear='" + leagueYear + '\'' +
+                ", internationalClassId=" + internationalClassId +
+                ", generalClassId=" + generalClassId +
+                '}';
+    }
+
+    @Override
+    public int compareTo(Event o) {
+        if(this.getInternationalClassId() != 0 || o.getInternationalClassId() != 0)
+            return this.getInternationalClassId() - o.getInternationalClassId();
+        else
+            return this.getGeneralClassId() - o.getGeneralClassId();
+    }
 }

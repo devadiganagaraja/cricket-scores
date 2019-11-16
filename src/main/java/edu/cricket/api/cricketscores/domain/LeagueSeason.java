@@ -1,13 +1,16 @@
 package edu.cricket.api.cricketscores.domain;
 
 import edu.cricket.api.cricketscores.rest.response.model.Event;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+
+import java.util.*;
 
 public class LeagueSeason {
     private String leagueYear;
+    private String leagueStartDate;
+    private String leagueEndDate;
+    private String name;
+    private Date startDate;
+    private Date endDate;
     private Set<Event> eventSet = new HashSet<>();
     private Set<LeagueTeam> teams;
     private Set<Event> postEvents = new HashSet<>();
@@ -52,6 +55,46 @@ public class LeagueSeason {
 
     public Set<Event> getNextEvents() {
         return nextEvents;
+    }
+
+    public String getLeagueStartDate() {
+        return leagueStartDate;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public void setLeagueStartDate(String leagueStartDate) {
+        this.leagueStartDate = leagueStartDate;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getLeagueEndDate() {
+        return leagueEndDate;
+    }
+
+    public void setLeagueEndDate(String leagueEndDate) {
+        this.leagueEndDate = leagueEndDate;
     }
 
     public void setNextEvents(Set<Event> nextEvents) {

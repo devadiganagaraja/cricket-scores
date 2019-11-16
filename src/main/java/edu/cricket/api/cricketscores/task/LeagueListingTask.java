@@ -5,8 +5,11 @@ import edu.cricket.api.cricketscores.repository.EventRepository;
 import edu.cricket.api.cricketscores.repository.LeagueRepository;
 import edu.cricket.api.cricketscores.rest.response.model.*;
 import edu.cricket.api.cricketscores.rest.source.model.EventListing;
-import edu.cricket.api.cricketscores.rest.source.model.Team;
+import edu.cricket.api.cricketscores.rest.source.model.Ref;
+import edu.cricket.api.cricketscores.rest.source.model.Season;
 import edu.cricket.api.cricketscores.utils.CommonUtils;
+import edu.cricket.api.cricketscores.utils.DateUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class LeagueListingTask {
@@ -59,46 +61,34 @@ public class LeagueListingTask {
                     populateLeaders(leagueSeason);
                     populateLeagueTeam(leagueSeason, event);
                 } else {
-                    LeagueSeason leagueSeason = new LeagueSeason();
-                    leagueSeason.setBattingLeaders(new TreeSet<>());
-                    leagueSeason.setBowlingLeaders(new TreeSet<>());
-                    leagueSeason.setEventSet(new HashSet<>());
-                    updateLastEvent(event, leagueSeason);
-                    updateNextEvent(event, leagueSeason);
-                    updateLiveEvent(event, leagueSeason);
-
-                    leagueSeason.getEventSet().add(event);
-                    populateLeaders(leagueSeason);
-                    populateLeagueTeam(leagueSeason, event);
-
-                    leagueAggregate.getLeagueInfo().getLeagueSeasonMap().put(event.getLeagueYear(), leagueSeason);
+                    setNewLeagueSeason(event, leagueAggregate);
                 }
-
-            } else {
+            }else{
                 leagueAggregate = new LeagueAggregate();
                 leagueAggregate.setId(String.valueOf(leagueId));
-
-
-                LeagueInfo newLeague = new LeagueInfo();
-                newLeague.setLeagueName(event.getLeagueName());
-                newLeague.setLeagueStartDate(event.getLeagueStartDate());
-                newLeague.setLeagueEndDate(event.getLeagueEndDate());
-
-                newLeague.setLeagueSeasonMap(new HashMap<>());
-                LeagueSeason leagueSeason = new LeagueSeason();
-                leagueSeason.setLeagueYear(event.getLeagueYear());
-                updateLastEvent(event, leagueSeason);
-                updateNextEvent(event, leagueSeason);
-                updateLiveEvent(event, leagueSeason);
-                leagueSeason.getEventSet().add(event);
-                populateLeaders(leagueSeason);
-                populateLeagueTeam(leagueSeason, event);
-                newLeague.getLeagueSeasonMap().put(event.getLeagueYear(), leagueSeason);
-                leagueAggregate.setLeagueInfo(newLeague);
-
+                LeagueInfo leagueInfo = new LeagueInfo();
+                leagueInfo.setLeagueName(event.getLeagueName());
+                leagueAggregate.setLeagueInfo(leagueInfo);
+                setNewLeagueSeason(event, leagueAggregate);
             }
             leagueRepository.save(leagueAggregate);
         }
+    }
+
+    private void setNewLeagueSeason(Event event, LeagueAggregate leagueAggregate) {
+        LeagueSeason leagueSeason = new LeagueSeason();
+        leagueSeason.setBattingLeaders(new TreeSet<>());
+        leagueSeason.setBowlingLeaders(new TreeSet<>());
+        leagueSeason.setEventSet(new HashSet<>());
+        updateLastEvent(event, leagueSeason);
+        updateNextEvent(event, leagueSeason);
+        updateLiveEvent(event, leagueSeason);
+
+        leagueSeason.getEventSet().add(event);
+        populateLeaders(leagueSeason);
+        populateLeagueTeam(leagueSeason, event);
+
+        leagueAggregate.getLeagueInfo().getLeagueSeasonMap().put(event.getLeagueYear(), leagueSeason);
     }
 
     private void populateLeagueTeam(LeagueSeason leagueSeason, Event event) {
@@ -271,7 +261,11 @@ public class LeagueListingTask {
             leagueSeason.getNextEvents().remove(event);
         }
     }
-    public void refreshLiveLeagues() {
+
+
+    public void refreshEventsAndLeagues() {
+
+        log.info("liveEvents :: "+liveEvents.size());
         liveEvents.values().forEach(event -> {
             EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/leagues/"+(event.getLeagueId()/13)+"/events?eventsrange=100&limit=100", EventListing.class);
             eventListing.getItems().stream().map(ref -> ref.get$ref()).forEach($ref -> {
@@ -282,36 +276,146 @@ public class LeagueListingTask {
                     if(eventAggregateOptional.isPresent()) {
                         eventAggregate = eventAggregateOptional.get();
                         eventAggregate.setEventInfo(eventInfo);
-                        if(! "pre".equalsIgnoreCase(eventInfo.getState()))
                             eventAggregate.setScoreCard(scoreCardTask.getEventScoreCard(eventInfo.getEventId()));
                     }else{
                         eventAggregate = new EventAggregate();
                         eventAggregate.setId(eventInfo.getEventId());
                         eventAggregate.setEventInfo(eventInfo);
-                        if(! "pre".equalsIgnoreCase(eventInfo.getState()))
-                            eventAggregate.setScoreCard(scoreCardTask.getEventScoreCard(eventInfo.getEventId()));
+                        eventAggregate.setScoreCard(scoreCardTask.getEventScoreCard(eventInfo.getEventId()));
                     }
 
                     eventRepository.save(eventAggregate);
                 }
-                log.info("eventInfo : {}",eventInfo);
                 updateLeagueForEvent(eventInfo);
             });
         });
+    }
+
+
+
+    public void refreshLeagues(String leagueId) {
+        log.info("refreshLeagues : {}", 1);
+        edu.cricket.api.cricketscores.rest.source.model.League league = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/leagues/"+leagueId+"?limit=10000", edu.cricket.api.cricketscores.rest.source.model.League.class);
+        if (null != league) {
+            Ref seasonRef = league.getSeason();
+            Season season = restTemplate.getForObject(seasonRef.get$ref(), Season.class);
+            String seasonYear = String.valueOf(season.getYear());
+
+            if (null != season) {
+                Optional<LeagueAggregate> leagueAggregateOptional = leagueRepository.findById(leagueId);
+                LeagueAggregate leagueAggregate;
+                if (leagueAggregateOptional.isPresent()) {
+                    leagueAggregate = leagueAggregateOptional.get();
+
+                    if (null != leagueAggregate.getLeagueInfo()) {
+                        Map<String, LeagueSeason> leagueSeasonMap = leagueAggregate.getLeagueInfo().getLeagueSeasonMap();
+                        if (null != leagueSeasonMap) {
+                            LeagueSeason leagueSeason;
+                            if (leagueSeasonMap.containsKey(seasonYear)) {
+                                leagueSeason = leagueSeasonMap.get(seasonYear);
+                            } else {
+                                leagueSeason = new LeagueSeason();
+                                leagueSeason.setLeagueYear(seasonYear);
+                            }
+                            populateLeagueSeasonInfo(leagueSeason, season);
+                            leagueSeasonMap.put(seasonYear, leagueSeason);
+                        }
+                    }
+                } else {
+
+                    leagueAggregate = new LeagueAggregate();
+                    leagueAggregate.setId(leagueId);
+                    LeagueInfo leagueInfo = new LeagueInfo();
+                    Map<String, LeagueSeason> leagueSeasonMap = new HashMap<>();
+                    LeagueSeason leagueSeason = new LeagueSeason();
+                    leagueSeason.setLeagueYear(seasonYear);
+                    populateLeagueSeasonInfo(leagueSeason, season);
+                    leagueSeasonMap.put(seasonYear, leagueSeason);
+                    leagueInfo.setLeagueSeasonMap(leagueSeasonMap);
+                    leagueAggregate.setLeagueInfo(leagueInfo);
+                }
+                leagueRepository.save(leagueAggregate);
+            }
+
+        }
+    }
+
+    public void populateLeagueSeasonInfo( LeagueSeason leagueSeason, Season season){
+        leagueSeason.setName(season.getName());
+        leagueSeason.setStartDate(DateUtils.getDateFromString(season.getStartDate()));
+        leagueSeason.setLeagueStartDate(season.getStartDate());
+        leagueSeason.setEndDate(DateUtils.getDateFromString(season.getEndDate()));
+        leagueSeason.setLeagueEndDate(season.getEndDate());
     }
 
     public LeagueDetails getLeagueInfo(String leagueId) {
         Optional<LeagueAggregate> leagueAggregateOptional = leagueRepository.findById(leagueId);
         if(leagueAggregateOptional.isPresent()){
             LeagueDetails leagueDetails = new LeagueDetails();
-            LeagueInfo leagueInfo =  leagueAggregateOptional.get().getLeagueInfo();
+            LeagueAggregate leagueAggregate =  leagueAggregateOptional.get();
+            leagueDetails.setLeagueId(leagueAggregate.getId());
+            LeagueInfo leagueInfo = leagueAggregate.getLeagueInfo();
             leagueDetails.setLeagueName(leagueInfo.getLeagueName());
-            leagueDetails.setLeagueStartDate(leagueInfo.getLeagueStartDate());
-            leagueDetails.setLeagueEndDate(leagueInfo.getLeagueEndDate());
             leagueDetails.setLeagueSeasons(new ArrayList(leagueInfo.getLeagueSeasonMap().values()));
             return leagueDetails;
 
         }
         else return null;
     }
+
+    public List<LeagueDetails> getLeagues() {
+        List<LeagueDetails> leagueDetailsList = new ArrayList<>();
+        List<LeagueAggregate> leagueAggregates = leagueRepository.findAll();
+        if(null != leagueAggregates){
+            leagueAggregates.forEach(leagueAggregate -> {
+                LeagueInfo leagueInfo = leagueAggregate.getLeagueInfo();
+                if(isTrendingLeague(leagueInfo)){
+                    LeagueDetails leagueDetails = new LeagueDetails();
+                    leagueDetails.setLeagueId(leagueAggregate.getId());
+                    leagueDetails.setLeagueName(leagueInfo.getLeagueName());
+                    leagueDetailsList.add(leagueDetails);
+                }
+            });
+        }
+        return  leagueDetailsList;
+    }
+
+    private boolean isTrendingLeague(LeagueInfo leagueInfo) {
+        Map<String, LeagueSeason> seasonsMap =  leagueInfo.getLeagueSeasonMap();
+        Optional<LeagueSeason> leagueSeasonOpt = geltLatestLeagueSeason(seasonsMap);
+        if(leagueSeasonOpt.isPresent()){
+            LeagueSeason leagueSeason = leagueSeasonOpt.get();
+            Date startDate = leagueSeason.getStartDate();
+            Date endDate = leagueSeason.getEndDate();
+
+            if(null != startDate ){
+                Calendar cal = Calendar.getInstance();
+                cal.add(Calendar.DATE, 10);
+                if(startDate.compareTo(cal.getTime()) > 0){
+                    return false;
+                }
+            }
+            if(null != endDate ){
+                Calendar cal = Calendar.getInstance();
+                cal.add(Calendar.DATE, -10);
+                if(endDate.compareTo(cal.getTime()) < 0){
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private Optional<LeagueSeason> geltLatestLeagueSeason(Map<String, LeagueSeason> seasonsMap) {
+        Optional<LeagueSeason> leagueSeasonOpt = Optional.empty();
+        if(null != seasonsMap && seasonsMap.size() > 0 ){
+            List<String> seasonKeyList =  new ArrayList<>(seasonsMap.keySet());
+            Collections.sort(seasonKeyList);
+            leagueSeasonOpt = Optional.ofNullable(seasonsMap.get(seasonKeyList.get(seasonKeyList.size() -1)));
+
+        }
+        return leagueSeasonOpt;
+    }
+
 }

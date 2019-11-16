@@ -1,6 +1,5 @@
 package edu.cricket.api.cricketscores.rest.scheduler;
 
-import edu.cricket.api.cricketscores.task.EventsListingTask;
 import edu.cricket.api.cricketscores.task.LeagueListingTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,9 +18,13 @@ public class LeagueScheduler {
     @Autowired
     LeagueListingTask leagueListingTask;
 
-    @Scheduled(fixedRate = 72000)
-    public void refreshLiveLeagues() {
-        leagueListingTask.refreshLiveLeagues();
-        logger.info("completed leagueListing refresh job at {}", new Date());
+
+
+    @Scheduled(fixedRate = 1800000)
+    public void refreshEventsAndLeagues() {
+        logger.info("starting refreshEventsAndLeagues job at {}", new Date());
+
+        leagueListingTask.refreshEventsAndLeagues();
+        logger.info("completed refreshEventsAndLeagues job at {}", new Date());
     }
 }

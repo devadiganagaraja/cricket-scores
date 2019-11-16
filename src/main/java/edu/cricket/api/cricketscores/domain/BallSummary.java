@@ -1,6 +1,9 @@
 package edu.cricket.api.cricketscores.domain;
 
+import org.springframework.data.mongodb.core.index.Indexed;
+
 public class BallSummary {
+    @Indexed
     private String eventId;
     private int inningsNo;
     private double overUnique;

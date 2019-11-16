@@ -1,14 +1,23 @@
 package edu.cricket.api.cricketscores.rest.response.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.cricket.api.cricketscores.domain.LeagueSeason;
 
 import java.util.List;
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class LeagueDetails {
+    private String leagueId;
     private String leagueName;
-    private String leagueStartDate;
-    private String leagueEndDate;
     private List<LeagueSeason> leagueSeasons;
+
+
+    public String getLeagueId() {
+        return leagueId;
+    }
+
+    public void setLeagueId(String leagueId) {
+        this.leagueId = leagueId;
+    }
 
     public String getLeagueName() {
         return leagueName;
@@ -16,22 +25,6 @@ public class LeagueDetails {
 
     public void setLeagueName(String leagueName) {
         this.leagueName = leagueName;
-    }
-
-    public String getLeagueStartDate() {
-        return leagueStartDate;
-    }
-
-    public void setLeagueStartDate(String leagueStartDate) {
-        this.leagueStartDate = leagueStartDate;
-    }
-
-    public String getLeagueEndDate() {
-        return leagueEndDate;
-    }
-
-    public void setLeagueEndDate(String leagueEndDate) {
-        this.leagueEndDate = leagueEndDate;
     }
 
     public List<LeagueSeason> getLeagueSeasons() {

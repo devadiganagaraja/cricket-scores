@@ -2,6 +2,7 @@ package edu.cricket.api.cricketscores.rest.controller;
 
 
 import edu.cricket.api.cricketscores.rest.response.MatchCommentary;
+import edu.cricket.api.cricketscores.task.EventBallsTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,13 +14,15 @@ import java.util.Map;
 @RestController
 public class EventBallDetailController {
 
+
+
     @Autowired
-    public Map<String,MatchCommentary> eventsCommsCache;
+    EventBallsTask eventBallsTask;
 
 
     @CrossOrigin
     @RequestMapping("/comms/{eventId}")
     public MatchCommentary getEventComms(@PathVariable(value="eventId") String eventId) {
-        return eventsCommsCache.get(eventId);
+        return eventBallsTask.fetchBallDetailsForMatch(eventId);
     }
 }

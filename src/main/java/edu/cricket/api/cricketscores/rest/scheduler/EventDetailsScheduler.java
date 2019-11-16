@@ -23,8 +23,6 @@ public class EventDetailsScheduler {
     public void refreshLiveEventScreCard() {
         eventScoreCardTask.refreshLiveEventScoreCards();
         logger.info("completed event refresh job at {}", new Date());
-
-
     }
 
 }
