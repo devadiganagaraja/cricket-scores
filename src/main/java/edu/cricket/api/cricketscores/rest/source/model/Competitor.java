@@ -1,12 +1,21 @@
 package edu.cricket.api.cricketscores.rest.source.model;
 
 public class Competitor {
+    private String id;
     private String $ref;
     private String homeAway;
     private int order;
     private Ref score;
     private Ref team;
     private boolean winner;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String get$ref() {
         return $ref;

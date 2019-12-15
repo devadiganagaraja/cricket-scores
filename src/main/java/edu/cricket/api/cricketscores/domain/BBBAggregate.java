@@ -2,7 +2,6 @@ package edu.cricket.api.cricketscores.domain;
 
 import edu.cricket.api.cricketscores.rest.source.model.Dismissal;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "balls")

@@ -28,12 +28,8 @@ public class LeagueListingTask {
     @Autowired
     EventRepository eventRepository;
 
-
     @Autowired
-    public Map<String, ScoreCard> eventsScoreCardCache;
-
-    @Autowired
-    Map<String,Event> liveEvents;
+    Map<String,EventAggregate> liveEventsCache;
 
     RestTemplate restTemplate = new RestTemplate();
 
@@ -143,13 +139,9 @@ public class LeagueListingTask {
 
             leagueSeason.getEventSet().stream().filter(event -> ! "pre".equalsIgnoreCase(event.getState())).forEach(event -> {
                 ScoreCard scoreCard = null;
-                if(eventsScoreCardCache.containsKey(event.getEventId())){
-                    scoreCard = eventsScoreCardCache.get(event.getEventId());
-                }else{
-                    Optional<EventAggregate> eventAggregateOpt = eventRepository.findById(event.getEventId());
-                    if(eventAggregateOpt.isPresent()){
-                        scoreCard = eventAggregateOpt.get().getScoreCard();
-                    }
+                Optional<EventAggregate> eventAggregateOpt = eventRepository.findById(event.getEventId());
+                if(eventAggregateOpt.isPresent()){
+                    scoreCard = eventAggregateOpt.get().getScoreCard();
                 }
                 if(null != scoreCard){
                     scoreCard.getInningsScores().values().forEach(inningsScoreCard -> {
@@ -265,30 +257,45 @@ public class LeagueListingTask {
 
     public void refreshEventsAndLeagues() {
 
-        log.info("liveEvents :: "+liveEvents.size());
-        liveEvents.values().forEach(event -> {
+        liveEventsCache.values().forEach(eventAggregate -> {
+            Event event = eventAggregate.getEventInfo();
             EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/leagues/"+(event.getLeagueId()/13)+"/events?eventsrange=100&limit=100", EventListing.class);
-            eventListing.getItems().stream().map(ref -> ref.get$ref()).forEach($ref -> {
-                Event eventInfo = eventsListingTask.getEventData($ref);
-                if(null != eventInfo && !liveEvents.containsKey(eventInfo.getEventId())){
-                    Optional<EventAggregate> eventAggregateOptional = eventRepository.findById(eventInfo.getEventId());
-                    EventAggregate eventAggregate;
-                    if(eventAggregateOptional.isPresent()) {
-                        eventAggregate = eventAggregateOptional.get();
-                        eventAggregate.setEventInfo(eventInfo);
-                            eventAggregate.setScoreCard(scoreCardTask.getEventScoreCard(eventInfo.getEventId()));
-                    }else{
-                        eventAggregate = new EventAggregate();
-                        eventAggregate.setId(eventInfo.getEventId());
-                        eventAggregate.setEventInfo(eventInfo);
-                        eventAggregate.setScoreCard(scoreCardTask.getEventScoreCard(eventInfo.getEventId()));
+            if(null != eventListing){
+                eventListing.getItems().stream().map(ref -> ref.get$ref()).forEach($ref -> {
+                    try {
+
+                        String sourceEventId = $ref.split("events/")[1];
+                        String eventId = String.valueOf(Long.valueOf(sourceEventId) * 13);
+
+
+                        Optional<EventAggregate> eventAggregateOptional = eventRepository.findById(eventId);
+                        if (!eventAggregateOptional.isPresent()) {
+                            EventAggregate leagueEvent = new EventAggregate();
+                            leagueEvent.setId(eventId);
+                            leagueEvent.setEventInfo(eventsListingTask.getEventData($ref));
+                            leagueEvent.setScoreCard(scoreCardTask.getEventScoreCard(eventId));
+                            eventRepository.save(leagueEvent);
+                            updateLeagueForEvent(leagueEvent.getEventInfo());
+                        }else{
+                            EventAggregate eventAggDb= eventAggregateOptional.get();
+                            eventAggDb.setId(eventId);
+                            if(null == eventAggDb.getEventInfo())
+                                eventAggDb.setEventInfo(eventsListingTask.getEventData($ref));
+                            if(null == eventAggDb.getScoreCard())
+                                eventAggDb.setScoreCard(scoreCardTask.getEventScoreCard(eventId));
+                            eventRepository.save(eventAggDb);
+                            updateLeagueForEvent(eventAggDb.getEventInfo());
+                        }
+                    }catch (Exception e){
+                        e.printStackTrace();
                     }
 
-                    eventRepository.save(eventAggregate);
-                }
-                updateLeagueForEvent(eventInfo);
-            });
+                });
+            }
+
+
         });
+
     }
 
 

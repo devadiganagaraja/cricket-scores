@@ -1,8 +1,10 @@
 package edu.cricket.api.cricketscores.rest.controller;
 
+import edu.cricket.api.cricketscores.domain.EventAggregate;
 import edu.cricket.api.cricketscores.domain.EventPlayerPointsAggregate;
 import edu.cricket.api.cricketscores.domain.UserEventSquadAggregate;
 import edu.cricket.api.cricketscores.repository.EventPlayerPointsRepository;
+import edu.cricket.api.cricketscores.repository.EventRepository;
 import edu.cricket.api.cricketscores.repository.UserEventSquadRepository;
 import edu.cricket.api.cricketscores.rest.request.BestEleven;
 import edu.cricket.api.cricketscores.rest.response.model.*;
@@ -32,8 +34,6 @@ public class CricketSquadController {
     EventSquadsTask eventSquadsTask;
 
 
-    @Autowired
-    Map<String,Event> liveEvents;
 
     @Autowired
     UserService userService;
@@ -43,6 +43,9 @@ public class CricketSquadController {
 
     @Autowired
     TeamNameService teamNameService;
+
+    @Autowired
+    EventRepository eventRepository;
 
     @Autowired
     UserEventSquadRepository userEventSquadRepository;
@@ -91,55 +94,56 @@ public class CricketSquadController {
     @RequestMapping("/bestEleven/userName/{userName}/event/{eventId}")
     public EventBestEleven getBestEleven(@PathVariable(value="userName") String userName, @PathVariable(value="eventId") String eventId) {
 
-        logger.info("getBestEleven==>");
-
         EventBestEleven eventBestEleven = new EventBestEleven();
-        Event event = liveEvents.get(eventId);
-        if(null != event) {
-            logger.info("getBestEleven==>event :{}",event);
-            eventBestEleven.setEvent(event);
-            Squad squad1 = new Squad();
-            squad1.setTeamName(event.getTeam1().getTeamName());
-            long sourceTeam1Id = Long.valueOf(event.getTeam1().getTeamName().split(":")[1]) / 13;
+        Optional<EventAggregate> eventAggregateOptional = eventRepository.findById(eventId);
+        if(eventAggregateOptional.isPresent()) {
+            Event event = eventAggregateOptional.get().getEventInfo();
+            if (null != event) {
+                logger.info("getBestEleven==>event :{}", event);
+                eventBestEleven.setEvent(event);
+                Squad squad1 = new Squad();
+                squad1.setTeamName(event.getTeam1().getTeamName());
+                long sourceTeam1Id = Long.valueOf(event.getTeam1().getTeamName().split(":")[1]) / 13;
 
-            squad1.setPlayers(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam1Id, event.getInternationalClassId()));
+                squad1.setPlayers(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam1Id, event));
 
-            eventBestEleven.setSquad1(squad1);
-            Squad squad2 = new Squad();
-            squad2.setTeamName(event.getTeam2().getTeamName());
-            long sourceTeam2Id = Long.valueOf(event.getTeam2().getTeamName().split(":")[1]) / 13;
-            squad2.setPlayers(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam2Id, event.getInternationalClassId()));
-            eventBestEleven.setSquad2(squad2);
+                eventBestEleven.setSquad1(squad1);
+                Squad squad2 = new Squad();
+                squad2.setTeamName(event.getTeam2().getTeamName());
+                long sourceTeam2Id = Long.valueOf(event.getTeam2().getTeamName().split(":")[1]) / 13;
+                squad2.setPlayers(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam2Id, event));
+                eventBestEleven.setSquad2(squad2);
 
-            Optional<UserEventSquadAggregate> userEventSquadAggregateOptional = userEventSquadRepository.findById(userName + ":" + eventId);
-            if (userEventSquadAggregateOptional.isPresent()) {
-                UserSquad userSquad = new UserSquad();
-                List<UserSquadPlayer> userSquadPlayers = userEventSquadAggregateOptional.get().getUserSquadPlayers();
-                logger.info("eventPlayerPointsRepository  => eventId :{}", eventId);
-                Optional<EventPlayerPointsAggregate> eventPlayerPointsAggregateOptional = eventPlayerPointsRepository.findById(eventId);
-                if(eventPlayerPointsAggregateOptional.isPresent()){
-                    EventPlayerPointsAggregate eventPlayerPointsAggregate = eventPlayerPointsAggregateOptional.get();
-                    Map<Long, PlayerPoints> playerPointsMap = eventPlayerPointsAggregate.getPlayerPointsMap();
-                    if(null != playerPointsMap){
-                        userSquadPlayers.stream().forEach(userSquadPlayer -> {
+                Optional<UserEventSquadAggregate> userEventSquadAggregateOptional = userEventSquadRepository.findById(userName + ":" + eventId);
+                if (userEventSquadAggregateOptional.isPresent()) {
+                    UserSquad userSquad = new UserSquad();
+                    List<UserSquadPlayer> userSquadPlayers = userEventSquadAggregateOptional.get().getUserSquadPlayers();
+                    logger.info("eventPlayerPointsRepository  => eventId :{}", eventId);
+                    Optional<EventPlayerPointsAggregate> eventPlayerPointsAggregateOptional = eventPlayerPointsRepository.findById(eventId);
+                    if (eventPlayerPointsAggregateOptional.isPresent()) {
+                        EventPlayerPointsAggregate eventPlayerPointsAggregate = eventPlayerPointsAggregateOptional.get();
+                        Map<Long, PlayerPoints> playerPointsMap = eventPlayerPointsAggregate.getPlayerPointsMap();
+                        if (null != playerPointsMap) {
+                            userSquadPlayers.stream().forEach(userSquadPlayer -> {
 
-                            logger.info("eventPlayerPointsRepository  => userSquadPlayer.getPlayerName() :{}", userSquadPlayer.getPlayerName());
+                                logger.info("eventPlayerPointsRepository  => userSquadPlayer.getPlayerName() :{}", userSquadPlayer.getPlayerName());
 
-                            long squadPlayerId = Long.valueOf(userSquadPlayer.getPlayerName().split(":")[1]);
-                            if(playerPointsMap.containsKey(squadPlayerId)){
-                                PlayerPoints playerPoints = playerPointsMap.get(squadPlayerId);
-                                logger.info("eventPlayerPointsRepository  => userSquadPlayer.getPlayerName() :{}, playerPoints :{}", userSquadPlayer.getPlayerName(), playerPoints);
-                                playerPoints.setPoints(userSquadPlayer.isCaptain()? playerPoints.getPoints()*3 : userSquadPlayer.isVoiceCaptain() ? playerPoints.getPoints()*2 :  playerPoints.getPoints());
-                                userSquadPlayer.setPoints(playerPoints);
-                                userSquad.setTotalPoints(userSquad.getTotalPoints()+playerPoints.getPoints());
-                            }
-                        });
+                                long squadPlayerId = Long.valueOf(userSquadPlayer.getPlayerName().split(":")[1]);
+                                if (playerPointsMap.containsKey(squadPlayerId)) {
+                                    PlayerPoints playerPoints = playerPointsMap.get(squadPlayerId);
+                                    logger.info("eventPlayerPointsRepository  => userSquadPlayer.getPlayerName() :{}, playerPoints :{}", userSquadPlayer.getPlayerName(), playerPoints);
+                                    playerPoints.setPoints(userSquadPlayer.isCaptain() ? playerPoints.getPoints() * 3 : userSquadPlayer.isVoiceCaptain() ? playerPoints.getPoints() * 2 : playerPoints.getPoints());
+                                    userSquadPlayer.setPoints(playerPoints);
+                                    userSquad.setTotalPoints(userSquad.getTotalPoints() + playerPoints.getPoints());
+                                }
+                            });
+                        }
                     }
+                    userSquad.setUserSquadPlayers(userSquadPlayers);
+                    eventBestEleven.setUserSquad(userSquad);
                 }
-                userSquad.setUserSquadPlayers(userSquadPlayers);
-                eventBestEleven.setUserSquad(userSquad);
-            }
 
+            }
         }
         return eventBestEleven;
     }
@@ -149,40 +153,43 @@ public class CricketSquadController {
     @PostMapping("/bestEleven/event/{eventId}")
     public EventBestEleven postBestEleven(@PathVariable(value="eventId") String eventId, @RequestBody BestEleven bestEleven) {
         EventBestEleven eventBestEleven = new EventBestEleven();
-        Event event = liveEvents.get(eventId);
-        eventBestEleven.setEvent(event);
-        Squad squad1 = new Squad();
-        squad1.setTeamName(event.getTeam1().getTeamName());
-        long sourceTeam1Id = Long.valueOf(event.getTeam1().getTeamName().split(":")[1])/13;
+        Optional<EventAggregate> eventAggregateOptional = eventRepository.findById(eventId);
+        if(eventAggregateOptional.isPresent()) {
+            Event event = eventAggregateOptional.get().getEventInfo();
+            eventBestEleven.setEvent(event);
+            Squad squad1 = new Squad();
+            squad1.setTeamName(event.getTeam1().getTeamName());
+            long sourceTeam1Id = Long.valueOf(event.getTeam1().getTeamName().split(":")[1]) / 13;
 
-        squad1.setPlayers(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam1Id, event.getInternationalClassId()));
+            squad1.setPlayers(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam1Id, event));
 
-        eventBestEleven.setSquad1(squad1);
-        Squad squad2 = new Squad();
-        squad2.setTeamName(event.getTeam2().getTeamName());
-        long sourceTeam2Id = Long.valueOf(event.getTeam2().getTeamName().split(":")[1])/13;
-        squad2.setPlayers(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam2Id, event.getInternationalClassId()));
-        eventBestEleven.setSquad2(squad2);
+            eventBestEleven.setSquad1(squad1);
+            Squad squad2 = new Squad();
+            squad2.setTeamName(event.getTeam2().getTeamName());
+            long sourceTeam2Id = Long.valueOf(event.getTeam2().getTeamName().split(":")[1]) / 13;
+            squad2.setPlayers(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam2Id, event));
+            eventBestEleven.setSquad2(squad2);
 
-        UserInfo userInfo = userService.getUserInfoByUserNameAndPassword(bestEleven.getUserName(), bestEleven.getPassword());
-        if(userInfo.getStatusCode() == 200){
-            UserSquad userSquad = new UserSquad();
-            userSquad.setUserSquadPlayers(new ArrayList<>());
-            if(StringUtils.isNotBlank(bestEleven.getPlayerIds())){
-                Arrays.stream(bestEleven.getPlayerIds().split(","))
-                        .forEach(player -> {
-                            long playerId = Long.parseLong(player.split(":")[0]);
-                            long teamId = Long.parseLong(player.split(":")[1]);
-                            UserSquadPlayer userSquadPlayer = new UserSquadPlayer();
-                            userSquadPlayer.setPlayerName(playerNameService.getPlayerName(playerId/13));
-                            userSquadPlayer.setTeamName(teamNameService.getTeamName(teamId/13));
-                            userSquadPlayer.setPoints(new PlayerPoints());
-                            userSquad.getUserSquadPlayers().add(userSquadPlayer);
-                        } );
+            UserInfo userInfo = userService.getUserInfoByUserNameAndPassword(bestEleven.getUserName(), bestEleven.getPassword());
+            if (userInfo.getStatusCode() == 200) {
+                UserSquad userSquad = new UserSquad();
+                userSquad.setUserSquadPlayers(new ArrayList<>());
+                if (StringUtils.isNotBlank(bestEleven.getPlayerIds())) {
+                    Arrays.stream(bestEleven.getPlayerIds().split(","))
+                            .forEach(player -> {
+                                long playerId = Long.parseLong(player.split(":")[0]);
+                                long teamId = Long.parseLong(player.split(":")[1]);
+                                UserSquadPlayer userSquadPlayer = new UserSquadPlayer();
+                                userSquadPlayer.setPlayerName(playerNameService.getPlayerName(playerId / 13));
+                                userSquadPlayer.setTeamName(teamNameService.getTeamName(teamId / 13));
+                                userSquadPlayer.setPoints(new PlayerPoints());
+                                userSquad.getUserSquadPlayers().add(userSquadPlayer);
+                            });
 
+                }
+                saveUserEventSquad(bestEleven.getUserName(), eventId, userSquad.getUserSquadPlayers());
+                eventBestEleven.setUserSquad(userSquad);
             }
-            saveUserEventSquad(bestEleven.getUserName(), eventId,userSquad.getUserSquadPlayers());
-            eventBestEleven.setUserSquad(userSquad);
         }
         return eventBestEleven;
 

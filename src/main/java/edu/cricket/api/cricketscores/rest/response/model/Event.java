@@ -1,14 +1,18 @@
 package edu.cricket.api.cricketscores.rest.response.model;
 
 import edu.cricket.api.cricketscores.rest.source.model.Type;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.util.Date;
 import java.util.Objects;
 
 public class Event implements Comparable<Event>{
     private String venue;
+    @Indexed
     private String eventId;
+    @Indexed
     private Date startDate;
+    @Indexed
     private Date endDate;
     private Competitor team1;
     private Competitor team2;
@@ -20,6 +24,7 @@ public class Event implements Comparable<Event>{
     private String description;
     private String detail;
     private String state;
+    @Indexed
     private long leagueId;
     private String leagueName;
     private String leagueYear;

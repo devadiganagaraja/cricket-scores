@@ -2,6 +2,7 @@ package edu.cricket.api.cricketscores.task;
 
 import edu.cricket.api.cricketscores.domain.BattingLeader;
 import edu.cricket.api.cricketscores.domain.BowlingLeader;
+import edu.cricket.api.cricketscores.domain.EventAggregate;
 import edu.cricket.api.cricketscores.domain.EventPlayerPointsAggregate;
 import edu.cricket.api.cricketscores.repository.EventPlayerPointsRepository;
 import edu.cricket.api.cricketscores.rest.response.model.*;
@@ -20,10 +21,8 @@ public class EventPlayerPointsTask {
     private static final Logger logger = LoggerFactory.getLogger(EventPlayerPointsTask.class);
 
     @Autowired
-    Map<String, Event> liveEvents;
+    Map<String, EventAggregate> liveEventsCache;
 
-    @Autowired
-    public Map<String, ScoreCard> eventsScoreCardCache;
 
     @Autowired
     EventPlayerPointsRepository eventPlayerPointsRepository;
@@ -31,15 +30,15 @@ public class EventPlayerPointsTask {
 
     public void updateEventPlayerPoints() {
 
-        liveEvents.values().stream().forEach(event -> {
+        liveEventsCache.values().stream().forEach(eventAggregate -> {
+            Event event = eventAggregate.getEventInfo();
 
             if(!"pre".equalsIgnoreCase(event.getState())){
-                if(eventsScoreCardCache.containsKey(event.getEventId())){
 
                     EventPlayerPointsAggregate eventPlayerPointsAggregate = new EventPlayerPointsAggregate();
                     eventPlayerPointsAggregate.setId(event.getEventId());
                     Map<Long, PlayerPoints> playerPointsMap = new HashMap<>();
-                    ScoreCard scoreCard = eventsScoreCardCache.get(event.getEventId());
+                    ScoreCard scoreCard = eventAggregate.getScoreCard();
 
                     if(null != scoreCard){
                         scoreCard.getInningsScores().values().stream().forEach(inningsScoreCard -> {
@@ -101,7 +100,7 @@ public class EventPlayerPointsTask {
                         });
                     }
                     eventPlayerPointsRepository.save(eventPlayerPointsAggregate);
-                }
+
             }
         });
 

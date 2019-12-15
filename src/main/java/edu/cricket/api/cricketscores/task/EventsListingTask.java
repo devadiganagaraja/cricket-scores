@@ -41,13 +41,16 @@ public class EventsListingTask {
     RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
-    Map<String,Event> liveEvents;
+    Map<String,EventAggregate> liveEvents;
 
     @Autowired
     EventRepository eventRepository;
 
     @Autowired
     QEventAggregate qEventAggregate;
+
+    @Autowired
+    EventSquadsTask eventSquadsTask;
 
 
     @Autowired
@@ -87,7 +90,7 @@ public class EventsListingTask {
         });
 
         log.info("finally eventMap :{}", eventMap.size());
-        liveEvents.putAll(eventMap);
+        //liveEvents.putAll(eventMap);
         log.info("finally liveEvents.keySet() :{}", liveEvents.keySet());
 
     }
@@ -147,15 +150,24 @@ public class EventsListingTask {
                 team1.setTeamName(getEventTeam(competitorList.get(0).getTeam().get$ref()));
                 team1.setScore(getEventScore(competitorList.get(0).getScore().get$ref()));
                 team1.setWinner(competitorList.get(0).isWinner());
+                if("pre".equalsIgnoreCase(event.getState()) && event.getInternationalClassId() > 0) {
+                    long sourceTeam1Id = Long.valueOf(team1.getTeamName().split(":")[1]) / 13;
+                    team1.setSquad(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam1Id, event));
+                }
                 event.setTeam1(team1);
 
                 edu.cricket.api.cricketscores.rest.response.model.Competitor team2 = new edu.cricket.api.cricketscores.rest.response.model.Competitor();
                 team2.setTeamName(getEventTeam(competitorList.get(1).getTeam().get$ref()));
                 team2.setScore(getEventScore(competitorList.get(1).getScore().get$ref()));
+                if("pre".equalsIgnoreCase(event.getState()) && event.getInternationalClassId() > 0) {
+                    long sourceTeam2Id = Long.valueOf(team2.getTeamName().split(":")[1]) / 13;
+                    team2.setSquad(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam2Id, event));
+                }
                 event.setTeam2(team2);
             }
             return event;
         }catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -213,27 +225,31 @@ public class EventsListingTask {
 
     public List<League> getLiveEvents(){
 
-        List<Event> eventInfos =  new ArrayList<>(liveEvents.values());
+        log.info("liveEvents.valuesse -> {}", liveEvents.values());
+
+        List<EventAggregate> eventInfos =  new ArrayList<>(liveEvents.values());
         Set<League> leagues = new HashSet<>();
         if(null != eventInfos) {
             eventInfos.forEach(event -> {
+
+                log.info("event -> {}", event);
                 League eventLeague = new League();
-                eventLeague.setLeagueId(event.getLeagueId());
+                eventLeague.setLeagueId(event.getEventInfo().getLeagueId());
 
                 if(leagues.contains(eventLeague)){
                     leagues.forEach(league -> {
-                        if (league.getLeagueId() == event.getLeagueId()) {
-                            league.getEventSet().add(event);
+                        if (league.getLeagueId() == event.getEventInfo().getLeagueId()) {
+                            league.getEventSet().add(event.getEventInfo());
                         }
                     });
                 }else {
                     League newLeague = new League();
-                    newLeague.setLeagueId(event.getLeagueId());
-                    newLeague.setLeagueName(event.getLeagueName());
-                    newLeague.setLeagueYear(event.getLeagueYear());
-                    newLeague.setClassId(event.getInternationalClassId() > 0 ? event.getInternationalClassId() : event.getGeneralClassId());
+                    newLeague.setLeagueId(event.getEventInfo().getLeagueId());
+                    newLeague.setLeagueName(event.getEventInfo().getLeagueName());
+                    newLeague.setLeagueYear(event.getEventInfo().getLeagueYear());
+                    newLeague.setClassId(event.getEventInfo().getInternationalClassId() > 0 ? event.getEventInfo().getInternationalClassId() : event.getEventInfo().getGeneralClassId());
                     newLeague.setEventSet(new HashSet<>());
-                    newLeague.getEventSet().add(event);
+                    newLeague.getEventSet().add(event.getEventInfo());
                     leagues.add(newLeague);
                 }
             });

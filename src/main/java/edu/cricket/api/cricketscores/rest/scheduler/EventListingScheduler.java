@@ -18,7 +18,7 @@ public class EventListingScheduler {
     EventsListingTask eventsListingTask;
 
 
-    @Scheduled(fixedRate = 36000000)
+    //@Scheduled(fixedRate = 60000)
     public void refreshEvents() {
         eventsListingTask.setEvents();
         logger.info("completed eventListing refresh job at {}", new Date());

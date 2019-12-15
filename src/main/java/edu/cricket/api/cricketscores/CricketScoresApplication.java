@@ -1,5 +1,6 @@
 package edu.cricket.api.cricketscores;
 
+import edu.cricket.api.cricketscores.domain.EventAggregate;
 import edu.cricket.api.cricketscores.rest.response.MatchCommentary;
 import edu.cricket.api.cricketscores.rest.response.model.Event;
 import edu.cricket.api.cricketscores.rest.response.model.ScoreCard;
@@ -13,7 +14,9 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @EnableScheduling
@@ -25,16 +28,31 @@ public class CricketScoresApplication {
 
 	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
-	@Qualifier("liveEvents")
-	public Map<String,Event> liveEvents(){
+	@Qualifier("preEvents")
+	public Map<String,Boolean> preEvents(){
 		return new ConcurrentHashMap<>();
 	}
 
 
 	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
-	@Qualifier("eventsScoreCardCache")
-	public Map<String,ScoreCard> eventsScoreCardCache(){
+	@Qualifier("liveEvents")
+	public Map<String,Boolean> liveEvents(){
+		return new ConcurrentHashMap<>();
+	}
+
+
+	@Bean
+	@Order(Ordered.HIGHEST_PRECEDENCE)
+	@Qualifier("postEvents")
+	public Map<String,Boolean> postEvents(){
+		return new ConcurrentHashMap<>();
+	}
+
+	@Bean
+	@Order(Ordered.HIGHEST_PRECEDENCE)
+	@Qualifier("liveEventsCache")
+	public Map<String,EventAggregate> liveEventsCache(){
 		return new ConcurrentHashMap<>();
 	}
 

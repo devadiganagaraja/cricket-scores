@@ -18,7 +18,7 @@ public class EventPlayerPointsScheduler {
     private static final Logger logger = LoggerFactory.getLogger(EventPlayerPointsScheduler.class);
 
 
-    //@Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 300000)
     public void refreshLiveLeagues() {
         eventPlayerPointsTask.updateEventPlayerPoints();
         logger.info("completed event player points refresh job at {}", new Date());

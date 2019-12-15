@@ -21,10 +21,9 @@ public class EventBallsPersistScheduledTask {
     @Autowired
     EventBallsTask eventBallsTask;
 
-    @Scheduled(fixedRate = 20000)
+    @Scheduled(fixedRate = 30000)
     public void scheduleTaskWithFixedRate() {
         eventBallsTask.refreshLiveEventBalls();
-        logger.info("Fixed Rate Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()) );
     }
 
 

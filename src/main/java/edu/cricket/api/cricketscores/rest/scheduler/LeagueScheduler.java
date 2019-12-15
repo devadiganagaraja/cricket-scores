@@ -20,10 +20,9 @@ public class LeagueScheduler {
 
 
 
-    @Scheduled(fixedRate = 1800000)
+    @Scheduled(fixedRate = 7200000)
     public void refreshEventsAndLeagues() {
         logger.info("starting refreshEventsAndLeagues job at {}", new Date());
-
         leagueListingTask.refreshEventsAndLeagues();
         logger.info("completed refreshEventsAndLeagues job at {}", new Date());
     }

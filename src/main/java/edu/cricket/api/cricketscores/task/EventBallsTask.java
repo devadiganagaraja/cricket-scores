@@ -18,10 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class EventBallsTask {
@@ -30,7 +28,7 @@ public class EventBallsTask {
 
 
     @Autowired
-    Map<String,Event> liveEvents;
+    Map<String,EventAggregate> liveEventsCache;
 
     RestTemplate restTemplate = new RestTemplate();
 
@@ -49,29 +47,32 @@ public class EventBallsTask {
 
 
     public void refreshLiveEventBalls() {
-
-        liveEvents.keySet().forEach(eventId -> {
-           if("in".equalsIgnoreCase(liveEvents.get(eventId).getState())) {
+        liveEventsCache.keySet().forEach(eventId -> {
                 long sourceEventId = Long.parseLong(eventId)/13;
-                String $ref = "http://core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+sourceEventId+"/competitions/"+sourceEventId+"/details?limit=3000";
+                String $ref = "http://core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+sourceEventId+"/competitions/"+sourceEventId+"/details?sort=id:desc&limit=3";
                 EventListing detailsListing = restTemplate.getForObject($ref, EventListing.class);
-                List<Ref> ballRefs = detailsListing.getItems();
-                for (int i = ballRefs.size() - 1; (i >= ballRefs.size()-3 && i >= 0) ; i--) {
-                    if(null !=ballRefs.get(i)) {
-                        BallDetail ballDetail = restTemplate.getForObject(ballRefs.get(i).get$ref(), BallDetail.class);
+                detailsListing.getItems().forEach(ref -> {
+                    try {
+                        BallDetail ballDetail = restTemplate.getForObject(ref.get$ref(), BallDetail.class);
                         persistBall(ballDetail, eventId);
+                    }catch (Exception e){
+                        e.printStackTrace();
                     }
-                }
-
-
-           }
-       });
+                });
+        });
     }
 
     public void persistBall(BallDetail ballDetail, String eventId) {
         String ballId = eventId  + ":"+ ballDetail.getPeriod()+":"+ballDetail.getOver().getUnique();
-        BBBAggregate bbbAggregate = new BBBAggregate();
-        bbbAggregate.setBallId(ballId);
+        Optional<BBBAggregate> bbbAggregateOptional = ballRepository.findById(ballId);
+        BBBAggregate bbbAggregate;
+        if(bbbAggregateOptional.isPresent()){
+            bbbAggregate = bbbAggregateOptional.get();
+        }else{
+            bbbAggregate = new BBBAggregate();
+            bbbAggregate.setBallId(ballId);
+        }
+
         BallSummary ballSummary = getBallSummary(ballDetail, eventId);
         bbbAggregate.setBallSummary(ballSummary);
 
