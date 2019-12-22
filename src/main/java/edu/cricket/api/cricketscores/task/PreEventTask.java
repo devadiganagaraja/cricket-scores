@@ -111,19 +111,15 @@ public class PreEventTask {
                 team1.setTeamName(getEventTeam(competitorList.get(0).getTeam().get$ref()));
                 team1.setScore(getEventScore(competitorList.get(0).getScore().get$ref()));
                 team1.setWinner(competitorList.get(0).isWinner());
-                if(event.getInternationalClassId() > 0) {
-                    long sourceTeam1Id = Long.valueOf(team1.getTeamName().split(":")[1]) / 13;
-                    team1.setSquad(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam1Id, event));
-                }
+                long sourceTeam1Id = Long.valueOf(team1.getTeamName().split(":")[1]) / 13;
+                team1.setSquad(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam1Id, event));
                 event.setTeam1(team1);
 
                 edu.cricket.api.cricketscores.rest.response.model.Competitor team2 = new edu.cricket.api.cricketscores.rest.response.model.Competitor();
                 team2.setTeamName(getEventTeam(competitorList.get(1).getTeam().get$ref()));
                 team2.setScore(getEventScore(competitorList.get(1).getScore().get$ref()));
-                if( event.getInternationalClassId() > 0) {
-                    long sourceTeam2Id = Long.valueOf(team2.getTeamName().split(":")[1]) / 13;
-                    team2.setSquad(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam2Id, event));
-                }
+                long sourceTeam2Id = Long.valueOf(team2.getTeamName().split(":")[1]) / 13;
+                team2.setSquad(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam2Id, event));
                 event.setTeam2(team2);
             }
 

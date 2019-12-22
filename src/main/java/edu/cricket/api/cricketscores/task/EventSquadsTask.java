@@ -54,7 +54,7 @@ public class EventSquadsTask {
         String ref = "http://core.espnuk.org/v2/sports/cricket/leagues/" + (leagueId/13) + "/teams/" + teamId + "/athletes";
         if(eventInfo.getInternationalClassId() > 0)
             ref = ref+ "?internationalClassId=" + eventInfo.getInternationalClassId();
-        else if(eventInfo.getInternationalClassId() > 0){
+        else if(eventInfo.getGeneralClassId() > 0){
             ref = ref+ "?generalClassId=" + eventInfo.getGeneralClassId();
         }
 

@@ -45,7 +45,7 @@ public class EventStatusTask {
 
                 allEvents.add(eventId);
                 if("pre".equalsIgnoreCase(matchStatus.getType().getState())){
-                    preEvents.put(eventId, true);
+                    ut(eventId, true);
                     liveEvents.remove(eventId);
                     postEvents.remove(eventId);
 
