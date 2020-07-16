@@ -1,4 +1,4 @@
-package edu.cricket.api.cricketscores.domain;
+package edu.cricket.api.cricketscores.domain.aggregate;
 
 import edu.cricket.api.cricketscores.rest.response.model.AthleteInfo;
 import org.springframework.data.annotation.Id;
@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 
 @Document(collection = "athletes")
-public class AthleteAggregate {
+public class AthleteAggregate  extends BaseAggregate{
     @Id
     private String athleteId;
 
