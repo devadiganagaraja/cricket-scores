@@ -2,29 +2,39 @@ package edu.cricket.api.cricketscores.rest.source.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.util.Date;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class EventDetail {
-    private String date;
-    private String endDate;
+    private Date date;
+    private Date endDate;
     private List<Competition> competitions;
-    private List<Ref> venues;
     private Ref season;
+    private String name;
 
-    public String getDate() {
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+
+    public Date getDate() {
         return date;
     }
 
-    public void setDate(String date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
-    public String getEndDate() {
+    public Date getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(String endDate) {
+    public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
 
@@ -36,13 +46,6 @@ public class EventDetail {
         this.competitions = competitions;
     }
 
-    public List<Ref> getVenues() {
-        return venues;
-    }
-
-    public void setVenues(List<Ref> venues) {
-        this.venues = venues;
-    }
 
     public Ref getSeason() {
         return season;
@@ -57,7 +60,6 @@ public class EventDetail {
         return "EventDetail{" +
                 "date='" + date + '\'' +
                 ", competitions=" + competitions +
-                ", venues=" + venues +
                 ", season=" + season +
                 '}';
     }

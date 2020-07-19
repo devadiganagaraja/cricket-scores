@@ -8,6 +8,24 @@ public class Competitor {
     private Ref score;
     private Ref team;
     private boolean winner;
+    private Ref linescores;
+    private Ref roster;
+
+    public Ref getLinescores() {
+        return linescores;
+    }
+
+    public void setLinescores(Ref linescores) {
+        this.linescores = linescores;
+    }
+
+    public Ref getRoster() {
+        return roster;
+    }
+
+    public void setRoster(Ref roster) {
+        this.roster = roster;
+    }
 
     public String getId() {
         return id;

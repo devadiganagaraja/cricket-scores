@@ -1,5 +1,7 @@
 package edu.cricket.api.cricketscores.rest.source.model;
 
+import com.cricketfoursix.cricketdomain.domain.bbb.Dismissal;
+
 public class BallDetail {
     private int period;
     private Ref team;

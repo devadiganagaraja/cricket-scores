@@ -1,13 +1,11 @@
 package edu.cricket.api.cricketscores.task;
 
-import edu.cricket.api.cricketscores.domain.*;
-import edu.cricket.api.cricketscores.repository.BallRepository;
-import edu.cricket.api.cricketscores.rest.response.BallCommentary;
-import edu.cricket.api.cricketscores.rest.response.InningsCommentary;
+import com.cricketfoursix.cricketdomain.aggregate.BBBAggregate;
+import com.cricketfoursix.cricketdomain.aggregate.GameAggregate;
+import com.cricketfoursix.cricketdomain.common.bbb.InningCommentarySummary;
+import com.cricketfoursix.cricketdomain.domain.bbb.*;
+import com.cricketfoursix.cricketdomain.repository.BallRepository;
 import edu.cricket.api.cricketscores.rest.response.MatchCommentary;
-import edu.cricket.api.cricketscores.rest.response.OverCommentary;
-import edu.cricket.api.cricketscores.rest.response.model.Event;
-import edu.cricket.api.cricketscores.rest.response.model.ScoreCard;
 import edu.cricket.api.cricketscores.rest.service.PlayerNameService;
 import edu.cricket.api.cricketscores.rest.service.TeamNameService;
 import edu.cricket.api.cricketscores.rest.source.model.*;
@@ -15,20 +13,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class EventBallsTask {
+
 
     private static final Logger logger = LoggerFactory.getLogger(EventBallsTask.class);
 
 
     @Autowired
-    Map<String,EventAggregate> liveEventsCache;
+    Map<Long, GameAggregate> liveEventsCache;
 
     RestTemplate restTemplate = new RestTemplate();
 
@@ -43,18 +40,17 @@ public class EventBallsTask {
 
 
     @Autowired
-    public Map<String,MatchCommentary> eventsCommsCache;
+    public Map<Long,MatchCommentary> eventsCommsCache;
 
 
     public void refreshLiveEventBalls() {
-        liveEventsCache.keySet().forEach(eventId -> {
-                long sourceEventId = Long.parseLong(eventId)/13;
-                String $ref = "http://core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+sourceEventId+"/competitions/"+sourceEventId+"/details?sort=id:desc&limit=3";
+        liveEventsCache.keySet().forEach(gameId -> {
+                String $ref = "http://core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+(gameId/13)+"/competitions/"+(gameId/13)+"/details?sort=id:desc&limit=3";
                 EventListing detailsListing = restTemplate.getForObject($ref, EventListing.class);
                 detailsListing.getItems().forEach(ref -> {
                     try {
                         BallDetail ballDetail = restTemplate.getForObject(ref.get$ref(), BallDetail.class);
-                        persistBall(ballDetail, eventId);
+                        persistBall(ballDetail, gameId);
                     }catch (Exception e){
                         e.printStackTrace();
                     }
@@ -62,7 +58,7 @@ public class EventBallsTask {
         });
     }
 
-    public void persistBall(BallDetail ballDetail, String eventId) {
+    public void persistBall(BallDetail ballDetail, Long eventId) {
         String ballId = eventId  + ":"+ ballDetail.getPeriod()+":"+ballDetail.getOver().getUnique();
         Optional<BBBAggregate> bbbAggregateOptional = ballRepository.findById(ballId);
         BBBAggregate bbbAggregate;
@@ -79,8 +75,8 @@ public class EventBallsTask {
         OverSummary overSummary = getOverSummary(ballDetail);
         bbbAggregate.setOverSummary(overSummary);
 
-        InningSummary inningSummary = getInningSummary(ballDetail);
-        bbbAggregate.setInningSummary(inningSummary);
+        InningCommentarySummary inningCommentarySummary = getInningCommentarySummary(ballDetail);
+        bbbAggregate.setInningCommentarySummary(inningCommentarySummary);
 
         BatsmanSummary batsmanSummary = getBatsmanSummary(ballDetail.getBatsman());
         bbbAggregate.setBatsmanSummary(batsmanSummary);
@@ -93,11 +89,11 @@ public class EventBallsTask {
         bbbAggregate.setBowlerSummary(bowlerSummary);
         bbbAggregate.setBowlerId(null != bbbAggregate.getBowlerSummary().getBowlerName() ? Long.parseLong(bbbAggregate.getBowlerSummary().getBowlerName().split(":")[1]):0);
         bbbAggregate.setDismissalSummary(ballDetail.getDismissal());
-        pushToEventsCommsCache(ballDetail, bbbAggregate);
+        //pushToEventsCommsCache(ballDetail, bbbAggregate);
         ballRepository.save(bbbAggregate);
     }
 
-    public MatchCommentary fetchBallDetailsForMatch(String eventId) {
+    /*public MatchCommentary fetchBallDetailsForMatch(String eventId) {
         if(eventsCommsCache.containsKey(eventId)) {
             return eventsCommsCache.get(eventId);
         }else{
@@ -142,9 +138,9 @@ public class EventBallsTask {
 
         }
 
-    }
+    }*/
 
-    private void pushToEventsCommsCache(BallDetail ballDetail, BBBAggregate bbbAggregate) {
+    /*private void pushToEventsCommsCache(BallDetail ballDetail, BBBAggregate bbbAggregate) {
         try {
                 if (eventsCommsCache.containsKey(bbbAggregate.getBallSummary().getEventId())) {
                     MatchCommentary matchCommentary = eventsCommsCache.get(bbbAggregate.getBallSummary().getEventId());
@@ -183,32 +179,32 @@ public class EventBallsTask {
             e.printStackTrace();
         }
 
-    }
+    }*/
 
-    private MatchCommentary createMatchCommentary(BBBAggregate bbbAggregate) {
+/*    private MatchCommentary createMatchCommentary(BBBAggregate bbbAggregate) {
         MatchCommentary matchCommentary = new MatchCommentary();
         matchCommentary.setEventId(bbbAggregate.getBallSummary().getEventId());
         createInningsCommentary(bbbAggregate, matchCommentary);
         return matchCommentary;
-    }
+    }*/
 
-    private void createInningsCommentary(BBBAggregate bbbAggregate, MatchCommentary matchCommentary) {
+   /* private void createInningsCommentary(BBBAggregate bbbAggregate, MatchCommentary matchCommentary) {
         InningsCommentary inningsCommentary = new InningsCommentary();
         inningsCommentary.setInningSummary(bbbAggregate.getInningSummary());
         createOverCommentary(bbbAggregate, inningsCommentary);
         matchCommentary.getInningsCommentary().add(inningsCommentary);
-    }
+    }*/
 
-    private void createOverCommentary(BBBAggregate bbbAggregate, InningsCommentary inningsCommentary) {
+/*    private void createOverCommentary(BBBAggregate bbbAggregate, InningsCommentary inningsCommentary) {
         OverCommentary overCommentary = new OverCommentary();
         BallCommentary ballCommentary = createBallCommentary(bbbAggregate);
         overCommentary.getBallCommentarySet().add(ballCommentary);
         overCommentary.setOverNumber(bbbAggregate.getOverSummary().getOverNo());
         overCommentary.setOverSummary(bbbAggregate.getOverSummary());
         inningsCommentary.getOverCommentarySet().add(overCommentary);
-    }
+    }*/
 
-    private BallCommentary createBallCommentary(BBBAggregate bbbAggregate) {
+    /*private BallCommentary createBallCommentary(BBBAggregate bbbAggregate) {
         BallCommentary ballCommentary = new BallCommentary();
         ballCommentary.setBallId(bbbAggregate.getBallId());
         ballCommentary.setBallSummary(bbbAggregate.getBallSummary());
@@ -217,22 +213,21 @@ public class EventBallsTask {
         ballCommentary.setOtherBatsmanSummary(bbbAggregate.getOtherBatsmanSummary());
         ballCommentary.setDismissalSummary(bbbAggregate.getDismissalSummary());
         return ballCommentary;
-    }
+    }*/
 
-    private InningSummary getInningSummary(BallDetail ballDetail) {
-        InningSummary inningSummary = new InningSummary();
+    private InningCommentarySummary getInningCommentarySummary(BallDetail ballDetail) {
+        InningCommentarySummary inningCommentarySummary = new InningCommentarySummary();
         if(null != ballDetail.getInnings()){
-            inningSummary.setBattingTeamName(teamNameService.getTeamName(getSourceTeamId(ballDetail.getTeam())));
-            inningSummary.setTotalRuns(ballDetail.getInnings().getRuns());
-            inningSummary.setWickets(ballDetail.getInnings().getWickets());
-            inningSummary.setInningsNo(ballDetail.getInnings().getNumber());
-
+            inningCommentarySummary.setBattingTeamName(teamNameService.getTeamName(getSourceTeamId(ballDetail.getTeam())));
+            inningCommentarySummary.setTotalRuns(ballDetail.getInnings().getRuns());
+            inningCommentarySummary.setWickets(ballDetail.getInnings().getWickets());
+            inningCommentarySummary.setInningsNo(ballDetail.getInnings().getNumber());
         }
         if(null != ballDetail.getOver()) {
-            inningSummary.setOversUnique(ballDetail.getOver().getUnique());
+            inningCommentarySummary.setOversUnique(ballDetail.getOver().getUnique());
         }
 
-        return inningSummary;
+        return inningCommentarySummary;
     }
 
     private BowlerSummary getBowlerSummary(Bowler bowler) {
@@ -285,14 +280,14 @@ public class EventBallsTask {
         return overSummary;
     }
 
-    private BallSummary getBallSummary(BallDetail ballDetail, String eventId) {
+    private BallSummary getBallSummary(BallDetail ballDetail, Long gameId) {
         BallSummary ballSummary = new BallSummary();
         if(null != ballDetail.getInnings()) {
             ballSummary.setByes(ballDetail.getInnings().getByes() > 0 ? true : false);
             ballSummary.setLegByes(ballDetail.getInnings().getLegByes() > 0 ? true : false);
             ballSummary.setWide(ballDetail.getInnings().getWides() > 0 ? true : false);
             ballSummary.setNoBall(ballDetail.getInnings().getNoBalls() > 0 ? true : false);
-            ballSummary.setEventId(eventId);
+            ballSummary.setEventId(gameId);
             ballSummary.setInningsNo(ballDetail.getPeriod());
         }
         if(null != ballDetail.getOver()) {

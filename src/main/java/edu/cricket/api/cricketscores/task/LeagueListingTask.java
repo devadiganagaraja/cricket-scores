@@ -1,15 +1,18 @@
 package edu.cricket.api.cricketscores.task;
 
-import edu.cricket.api.cricketscores.domain.*;
-import edu.cricket.api.cricketscores.repository.EventRepository;
-import edu.cricket.api.cricketscores.repository.LeagueRepository;
-import edu.cricket.api.cricketscores.rest.response.model.*;
+import com.cricketfoursix.cricketdomain.aggregate.GameAggregate;
+import com.cricketfoursix.cricketdomain.aggregate.LeagueAggregate;
+import com.cricketfoursix.cricketdomain.common.game.*;
+import com.cricketfoursix.cricketdomain.common.league.LeagueInfo;
+import com.cricketfoursix.cricketdomain.common.league.LeagueSeason;
+import com.cricketfoursix.cricketdomain.common.league.LeagueTeam;
+import com.cricketfoursix.cricketdomain.common.stats.BattingLeader;
+import com.cricketfoursix.cricketdomain.common.stats.BowlingLeader;
+import com.cricketfoursix.cricketdomain.repository.GameRepository;
+import com.cricketfoursix.cricketdomain.repository.LeagueRepository;
+import edu.cricket.api.cricketscores.rest.service.TeamNameService;
 import edu.cricket.api.cricketscores.rest.source.model.EventListing;
-import edu.cricket.api.cricketscores.rest.source.model.Ref;
-import edu.cricket.api.cricketscores.rest.source.model.Season;
 import edu.cricket.api.cricketscores.utils.CommonUtils;
-import edu.cricket.api.cricketscores.utils.DateUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,109 +28,116 @@ public class LeagueListingTask {
     @Autowired
     LeagueRepository leagueRepository;
 
-    @Autowired
-    EventRepository eventRepository;
 
     @Autowired
-    Map<String,EventAggregate> liveEventsCache;
+    Map<Long, GameAggregate> liveEventsCache;
+
+
+    @Autowired
+    GameRepository gameRepository;
 
     RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
     private EventsListingTask eventsListingTask;
 
+
     @Autowired
-    private EventScoreCardTask scoreCardTask;
+    TeamNameService teamNameService;
 
 
 
-    public void updateLeagueForEvent(Event event) {
-        if(null != event) {
-            long leagueId = event.getLeagueId();
+
+    public void updateLeagueForEvent(GameAggregate gameAggregate) {
+        if(null != gameAggregate) {
+            GameInfo gameInfo = new GameInfo();
+            long leagueId = gameInfo.getLeagueId();
             LeagueAggregate leagueAggregate;
-            Optional<LeagueAggregate> leagueAggregateOptional = leagueRepository.findById(String.valueOf(leagueId));
+            Optional<LeagueAggregate> leagueAggregateOptional = leagueRepository.findById(gameInfo.getGameId());
             if (leagueAggregateOptional.isPresent()) {
                 leagueAggregate = leagueAggregateOptional.get();
-                if (leagueAggregate.getLeagueInfo().getLeagueSeasonMap().containsKey(event.getLeagueYear())) {
-                    LeagueSeason leagueSeason = leagueAggregate.getLeagueInfo().getLeagueSeasonMap().get(event.getLeagueYear());
-                    leagueSeason.getEventSet().add(event);
-                    updateLastEvent(event, leagueSeason);
-                    updateNextEvent(event, leagueSeason);
-                    updateLiveEvent(event, leagueSeason);
+                if (leagueAggregate.getLeagueInfo().getLeagueSeasonMap().containsKey(gameInfo.getSeason())) {
+                    LeagueSeason leagueSeason = leagueAggregate.getLeagueInfo().getLeagueSeasonMap().get(gameInfo.getSeason());
+                    leagueSeason.getEventSet().add(gameInfo);
+                    updateLastEvent(gameInfo, leagueSeason);
+                    updateNextEvent(gameInfo, leagueSeason);
+                    updateLiveEvent(gameInfo, leagueSeason);
                     populateLeaders(leagueSeason);
-                    populateLeagueTeam(leagueSeason, event);
+                    populateLeagueTeam(leagueSeason, gameAggregate);
                 } else {
-                    setNewLeagueSeason(event, leagueAggregate);
+                    setNewLeagueSeason(gameAggregate, leagueAggregate);
                 }
             }else{
                 leagueAggregate = new LeagueAggregate();
-                leagueAggregate.setId(String.valueOf(leagueId));
+                leagueAggregate.setId(leagueId);
                 LeagueInfo leagueInfo = new LeagueInfo();
-                leagueInfo.setLeagueName(event.getLeagueName());
+                leagueInfo.setLeagueName(gameInfo.getLeagueName());
                 leagueAggregate.setLeagueInfo(leagueInfo);
-                setNewLeagueSeason(event, leagueAggregate);
+                setNewLeagueSeason(gameAggregate, leagueAggregate);
             }
             leagueRepository.save(leagueAggregate);
         }
     }
 
-    private void setNewLeagueSeason(Event event, LeagueAggregate leagueAggregate) {
+    private void setNewLeagueSeason(GameAggregate gameAggregate, LeagueAggregate leagueAggregate) {
+        GameInfo gameInfo = gameAggregate.getGameInfo();
         LeagueSeason leagueSeason = new LeagueSeason();
         leagueSeason.setBattingLeaders(new TreeSet<>());
         leagueSeason.setBowlingLeaders(new TreeSet<>());
         leagueSeason.setEventSet(new HashSet<>());
-        updateLastEvent(event, leagueSeason);
-        updateNextEvent(event, leagueSeason);
-        updateLiveEvent(event, leagueSeason);
+        updateLastEvent(gameInfo, leagueSeason);
+        updateNextEvent(gameInfo, leagueSeason);
+        updateLiveEvent(gameInfo, leagueSeason);
 
-        leagueSeason.getEventSet().add(event);
+        leagueSeason.getEventSet().add(gameInfo);
         populateLeaders(leagueSeason);
-        populateLeagueTeam(leagueSeason, event);
+        populateLeagueTeam(leagueSeason, gameAggregate);
 
-        leagueAggregate.getLeagueInfo().getLeagueSeasonMap().put(event.getLeagueYear(), leagueSeason);
+        leagueAggregate.getLeagueInfo().getLeagueSeasonMap().put(gameInfo.getSeason(), leagueSeason);
     }
 
-    private void populateLeagueTeam(LeagueSeason leagueSeason, Event event) {
+    private void populateLeagueTeam(LeagueSeason leagueSeason, GameAggregate gameAggregate) {
         if(null == leagueSeason.getTeams()) leagueSeason.setTeams(new HashSet<>());
         LeagueTeam team;
-        Competitor competitor1 = event.getTeam1();
-        Competitor competitor2 = event.getTeam2();
-        long team1Id = Long.valueOf(competitor1.getTeamName().split(":")[1]);
+        Competitor competitor1 = gameAggregate.getCompetitor1();
+        Competitor competitor2 = gameAggregate.getCompetitor1();
+        GameInfo gameInfo = gameAggregate.getGameInfo();
+        long team1Id = competitor1.getId();
         Optional<LeagueTeam> team1Optional = leagueSeason.getTeams().stream().filter(leagueTeam -> leagueTeam.getId() == team1Id).findFirst();
         if(team1Optional.isPresent()){
             team = team1Optional.get();
-            pushResult(event, team, competitor1, competitor2);
+            pushResult(gameInfo, team, competitor1, competitor2);
         }else{
             team = new LeagueTeam();
             team.setId(team1Id);
-            team.setDisplayName(competitor1.getTeamName());
-            pushResult(event, team, competitor1, competitor2);
+            team.setDisplayName(teamNameService.getTeamNameByTeamId(competitor1.getId()));
+            pushResult(gameInfo, team, competitor1, competitor2);
             leagueSeason.getTeams().add(team);
         }
 
 
-        long team2Id = Long.valueOf(competitor2.getTeamName().split(":")[1]);
+        long team2Id = competitor2.getId();
         Optional<LeagueTeam> team2Optional = leagueSeason.getTeams().stream().filter(leagueTeam -> leagueTeam.getId() == team2Id).findFirst();
         if(team2Optional.isPresent()){
             team = team2Optional.get();
-            pushResult(event, team, competitor2, competitor1);
+            pushResult(gameInfo, team, competitor2, competitor1);
         }else{
             team = new LeagueTeam();
             team.setId(team2Id);
-            team.setDisplayName(competitor2.getTeamName());
-            pushResult(event, team, competitor2, competitor1);
+            team.setDisplayName(teamNameService.getTeamNameByTeamId(competitor2.getId()));
+            pushResult(gameInfo, team, competitor2, competitor1);
             leagueSeason.getTeams().add(team);
         }
     }
 
-    private void pushResult(Event event, LeagueTeam team, Competitor competitor1, Competitor competitor2) {
-        if("post".equalsIgnoreCase(event.getState())) {
+    private void pushResult(GameInfo gameInfo, LeagueTeam team, Competitor competitor1, Competitor competitor2) {
+        if(GameStatus.post.equals(gameInfo.getGameStatus())) {
             if (competitor1.isWinner()) {
-                team.getWon().add(event.getEventId());
+                team.getWon().add(gameInfo.getGameId());
             } else if (competitor2.isWinner()) {
-                team.getLost().add(event.getEventId());
+                team.getLost().add(gameInfo.getGameId());
             } else {
-                team.getDrawn().add(event.getEventId());
+                team.getDrawn().add(gameInfo.getGameId());
             }
         }
     }
@@ -137,69 +147,15 @@ public class LeagueListingTask {
         Map<Long, BowlingLeader> bowlingLeaderMap = new HashMap<>();
         if(null != leagueSeason.getEventSet()){
 
-            leagueSeason.getEventSet().stream().filter(event -> ! "pre".equalsIgnoreCase(event.getState())).forEach(event -> {
-                ScoreCard scoreCard = null;
-                Optional<EventAggregate> eventAggregateOpt = eventRepository.findById(event.getEventId());
-                if(eventAggregateOpt.isPresent()){
-                    scoreCard = eventAggregateOpt.get().getScoreCard();
+
+            leagueSeason.getEventSet().stream().filter(gameInfo -> ! GameStatus.pre.equals(gameInfo.getGameStatus())).forEach(event -> {
+                Optional<GameAggregate> gameAggregateOptional = gameRepository.findById(event.getGameId());
+                if(gameAggregateOptional.isPresent()){
+                    if(null != gameAggregateOptional.get().getCompetitor1())
+                    populateCompetitorLeaders(battingLeaderMap, bowlingLeaderMap, gameAggregateOptional.get().getCompetitor1());
+                    if(null != gameAggregateOptional.get().getCompetitor2())
+                    populateCompetitorLeaders(battingLeaderMap, bowlingLeaderMap, gameAggregateOptional.get().getCompetitor2());
                 }
-                if(null != scoreCard){
-                    scoreCard.getInningsScores().values().forEach(inningsScoreCard -> {
-                        BattingCard battingCard = inningsScoreCard.getBattingCard();
-                        if(null != battingCard){
-                            battingCard.getBatsmanCardSet().forEach(batsmanCard -> {
-                                if(battingLeaderMap.containsKey(batsmanCard.getPlayerId())){
-                                    BattingLeader battingLeader = battingLeaderMap.get(batsmanCard.getPlayerId());
-                                    battingLeader.setMatches(battingLeader.getMatches()+1);
-                                    battingLeader.setRuns(battingLeader.getRuns()+ CommonUtils.getIntegerFromString(batsmanCard.getRuns()));
-                                    battingLeader.setBalls(battingLeader.getBalls()+ CommonUtils.getIntegerFromString(batsmanCard.getBalls()));
-                                    battingLeader.setSixes(battingLeader.getSixes()+ CommonUtils.getIntegerFromString(batsmanCard.getSixes()));
-                                    battingLeader.setFours(battingLeader.getFours()+ CommonUtils.getIntegerFromString(batsmanCard.getFours()));
-
-                                }else{
-                                    BattingLeader battingLeader = new BattingLeader();
-                                    battingLeader.setPlayerId(batsmanCard.getPlayerId());
-                                    battingLeader.setPlayerName(batsmanCard.getPlayerName());
-                                    battingLeader.setMatches(1);
-                                    battingLeader.setRuns(CommonUtils.getIntegerFromString(batsmanCard.getRuns()));
-                                    battingLeader.setBalls(CommonUtils.getIntegerFromString(batsmanCard.getBalls()));
-                                    battingLeader.setFours(CommonUtils.getIntegerFromString(batsmanCard.getFours()));
-                                    battingLeader.setSixes(CommonUtils.getIntegerFromString(batsmanCard.getSixes()));
-                                    battingLeaderMap.put(batsmanCard.getPlayerId(), battingLeader);
-                                }
-                            });
-                        }
-
-
-                        BowlingCard bowlingCard = inningsScoreCard.getBowlingCard();
-                        if(null != bowlingCard){
-                            bowlingCard.getBowlerCardSet().forEach(bowlerCard -> {
-                                if(bowlingLeaderMap.containsKey(bowlerCard.getPlayerId())){
-                                    BowlingLeader bowlingLeader = bowlingLeaderMap.get(bowlerCard.getPlayerId());
-                                    bowlingLeader.setMatches(bowlingLeader.getMatches()+1);
-                                    bowlingLeader.setRunsConceded(bowlingLeader.getRunsConceded()+ CommonUtils.getIntegerFromString(bowlerCard.getConceded()));
-                                    bowlingLeader.setWickets(bowlingLeader.getWickets()+ CommonUtils.getIntegerFromString(bowlerCard.getWickets()));
-                                    bowlingLeader.setOvers(bowlingLeader.getOvers()+ CommonUtils.getFloatFromString(bowlerCard.getOvers()));
-                                    bowlingLeader.setMaidens(bowlingLeader.getMaidens()+ CommonUtils.getIntegerFromString(bowlerCard.getMaidens()));
-                                    bowlingLeader.setExtras(bowlingLeader.getExtras()+ CommonUtils.getIntegerFromString(bowlerCard.getWides()+ CommonUtils.getIntegerFromString(bowlerCard.getNoballs())+ CommonUtils.getIntegerFromString(bowlerCard.getByes())+ CommonUtils.getIntegerFromString(bowlerCard.getLegbyes())));
-
-                                }else{
-                                    BowlingLeader bowlingLeader = new BowlingLeader();
-                                    bowlingLeader.setPlayerId(bowlerCard.getPlayerId());
-                                    bowlingLeader.setPlayerName(bowlerCard.getPlayerName());
-                                    bowlingLeader.setMatches(1);
-                                    bowlingLeader.setRunsConceded(CommonUtils.getIntegerFromString(bowlerCard.getConceded()));
-                                    bowlingLeader.setWickets(CommonUtils.getIntegerFromString(bowlerCard.getWickets()));
-                                    bowlingLeader.setOvers(CommonUtils.getFloatFromString(bowlerCard.getOvers()));
-                                    bowlingLeader.setMaidens(CommonUtils.getIntegerFromString(bowlerCard.getMaidens()));
-                                    bowlingLeader.setExtras(CommonUtils.getIntegerFromString(bowlerCard.getWides()+ CommonUtils.getIntegerFromString(bowlerCard.getNoballs())+ CommonUtils.getIntegerFromString(bowlerCard.getByes())+ CommonUtils.getIntegerFromString(bowlerCard.getLegbyes())));
-                                    bowlingLeaderMap.put(bowlerCard.getPlayerId(), bowlingLeader);
-                                }
-                            });
-                        }
-                    });
-                }
-
             });
         }
 
@@ -224,67 +180,112 @@ public class LeagueListingTask {
 
     }
 
-    private void updateLastEvent(Event event, LeagueSeason leagueSeason) {
-        if("post".equalsIgnoreCase(event.getState())) {
-            log.info("update post eventInfo : {}",event);
-            leagueSeason.getPostEvents().add(event);
-            leagueSeason.getLiveEvents().remove(event);
-            leagueSeason.getNextEvents().remove(event);
+    private void populateCompetitorLeaders(Map<Long, BattingLeader> battingLeaderMap, Map<Long, BowlingLeader> bowlingLeaderMap, Competitor competitor) {
+        if(null != competitor){
+            competitor.getInningsScores().values().forEach(inningsScoreCard -> {
+                BattingCard battingCard = inningsScoreCard.getBattingCard();
+                if(null != battingCard){
+                    battingCard.getBatsmanCardSet().forEach(batsmanCard -> {
+                        if(battingLeaderMap.containsKey(batsmanCard.getPlayerId())){
+                            BattingLeader battingLeader = battingLeaderMap.get(batsmanCard.getPlayerId());
+                            battingLeader.setMatches(battingLeader.getMatches()+1);
+                            battingLeader.setRuns(battingLeader.getRuns()+ CommonUtils.getIntegerFromString(batsmanCard.getRuns()));
+                            battingLeader.setBalls(battingLeader.getBalls()+ CommonUtils.getIntegerFromString(batsmanCard.getBalls()));
+                            battingLeader.setSixes(battingLeader.getSixes()+ CommonUtils.getIntegerFromString(batsmanCard.getSixes()));
+                            battingLeader.setFours(battingLeader.getFours()+ CommonUtils.getIntegerFromString(batsmanCard.getFours()));
+
+                        }else{
+                            BattingLeader battingLeader = new BattingLeader();
+                            battingLeader.setPlayerId(batsmanCard.getPlayerId());
+                            battingLeader.setPlayerName(batsmanCard.getPlayerName());
+                            battingLeader.setMatches(1);
+                            battingLeader.setRuns(CommonUtils.getIntegerFromString(batsmanCard.getRuns()));
+                            battingLeader.setBalls(CommonUtils.getIntegerFromString(batsmanCard.getBalls()));
+                            battingLeader.setFours(CommonUtils.getIntegerFromString(batsmanCard.getFours()));
+                            battingLeader.setSixes(CommonUtils.getIntegerFromString(batsmanCard.getSixes()));
+                            battingLeaderMap.put(batsmanCard.getPlayerId(), battingLeader);
+                        }
+                    });
+                }
+
+
+                BowlingCard bowlingCard = inningsScoreCard.getBowlingCard();
+                if(null != bowlingCard){
+                    bowlingCard.getBowlerCardSet().forEach(bowlerCard -> {
+                        if(bowlingLeaderMap.containsKey(bowlerCard.getPlayerId())){
+                            BowlingLeader bowlingLeader = bowlingLeaderMap.get(bowlerCard.getPlayerId());
+                            bowlingLeader.setMatches(bowlingLeader.getMatches()+1);
+                            bowlingLeader.setRunsConceded(bowlingLeader.getRunsConceded()+ CommonUtils.getIntegerFromString(bowlerCard.getConceded()));
+                            bowlingLeader.setWickets(bowlingLeader.getWickets()+ CommonUtils.getIntegerFromString(bowlerCard.getWickets()));
+                            bowlingLeader.setOvers(bowlingLeader.getOvers()+ CommonUtils.getFloatFromString(bowlerCard.getOvers()));
+                            bowlingLeader.setMaidens(bowlingLeader.getMaidens()+ CommonUtils.getIntegerFromString(bowlerCard.getMaidens()));
+                            bowlingLeader.setExtras(bowlingLeader.getExtras()+ CommonUtils.getIntegerFromString(bowlerCard.getWides()+ CommonUtils.getIntegerFromString(bowlerCard.getNoballs())+ CommonUtils.getIntegerFromString(bowlerCard.getByes())+ CommonUtils.getIntegerFromString(bowlerCard.getLegbyes())));
+
+                        }else{
+                            BowlingLeader bowlingLeader = new BowlingLeader();
+                            bowlingLeader.setPlayerId(bowlerCard.getPlayerId());
+                            bowlingLeader.setPlayerName(bowlerCard.getPlayerName());
+                            bowlingLeader.setMatches(1);
+                            bowlingLeader.setRunsConceded(CommonUtils.getIntegerFromString(bowlerCard.getConceded()));
+                            bowlingLeader.setWickets(CommonUtils.getIntegerFromString(bowlerCard.getWickets()));
+                            bowlingLeader.setOvers(CommonUtils.getFloatFromString(bowlerCard.getOvers()));
+                            bowlingLeader.setMaidens(CommonUtils.getIntegerFromString(bowlerCard.getMaidens()));
+                            bowlingLeader.setExtras(CommonUtils.getIntegerFromString(bowlerCard.getWides()+ CommonUtils.getIntegerFromString(bowlerCard.getNoballs())+ CommonUtils.getIntegerFromString(bowlerCard.getByes())+ CommonUtils.getIntegerFromString(bowlerCard.getLegbyes())));
+                            bowlingLeaderMap.put(bowlerCard.getPlayerId(), bowlingLeader);
+                        }
+                    });
+                }
+            });
         }
     }
 
-    private void updateNextEvent(Event event, LeagueSeason leagueSeason) {
-        if("pre".equalsIgnoreCase(event.getState())) {
-            log.info("update pre eventInfo : {}",event);
-
-            leagueSeason.getPostEvents().remove(event);
-            leagueSeason.getLiveEvents().remove(event);
-            leagueSeason.getNextEvents().add(event);
+    private void updateLastEvent(GameInfo gameInfo, LeagueSeason leagueSeason) {
+        if(GameStatus.post.equals(gameInfo.getGameStatus())) {
+            log.info("update post gameInfo : {}",gameInfo);
+            leagueSeason.getPostGames().add(gameInfo);
+            leagueSeason.getLiveGames().remove(gameInfo);
+            leagueSeason.getNextGames().remove(gameInfo);
         }
     }
 
-    private void updateLiveEvent(Event event, LeagueSeason leagueSeason) {
-        leagueSeason.getLiveEvents().remove(event);
-        if ("in".equalsIgnoreCase(event.getState())) {
-            log.info("update live eventInfo : {}",event);
+    private void updateNextEvent(GameInfo gameInfo, LeagueSeason leagueSeason) {
+        if(GameStatus.pre.equals(gameInfo.getGameStatus())) {
+            log.info("update pre gameInfo : {}",gameInfo);
 
-            leagueSeason.getPostEvents().remove(event);
-            leagueSeason.getLiveEvents().add(event);
-            leagueSeason.getNextEvents().remove(event);
+            leagueSeason.getPostGames().remove(gameInfo);
+            leagueSeason.getLiveGames().remove(gameInfo);
+            leagueSeason.getNextGames().add(gameInfo);
+        }
+    }
+
+    private void updateLiveEvent(GameInfo gameInfo, LeagueSeason leagueSeason) {
+        leagueSeason.getLiveGames().remove(gameInfo);
+        if (GameStatus.live.equals(gameInfo.getGameStatus())) {
+            log.info("update live gameInfo : {}",gameInfo);
+
+            leagueSeason.getPostGames().remove(gameInfo);
+            leagueSeason.getLiveGames().add(gameInfo);
+            leagueSeason.getNextGames().remove(gameInfo);
         }
     }
 
 
     public void refreshEventsAndLeagues() {
 
-        liveEventsCache.values().forEach(eventAggregate -> {
-            Event event = eventAggregate.getEventInfo();
-            EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/leagues/"+(event.getLeagueId()/13)+"/events?eventsrange=100&limit=100", EventListing.class);
+        liveEventsCache.values().forEach(gameAggregate -> {
+            GameInfo gameInfo = gameAggregate.getGameInfo();
+            EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/leagues/"+(gameInfo.getLeagueId()/13)+"/events?eventsrange=100&limit=100", EventListing.class);
             if(null != eventListing){
                 eventListing.getItems().stream().map(ref -> ref.get$ref()).forEach($ref -> {
                     try {
 
                         String sourceEventId = $ref.split("events/")[1];
-                        String eventId = String.valueOf(Long.valueOf(sourceEventId) * 13);
+                        Long gameId = Long.valueOf(sourceEventId) * 13;
 
 
-                        Optional<EventAggregate> eventAggregateOptional = eventRepository.findById(eventId);
-                        if (!eventAggregateOptional.isPresent()) {
-                            EventAggregate leagueEvent = new EventAggregate();
-                            leagueEvent.setId(eventId);
-                            leagueEvent.setEventInfo(eventsListingTask.getEventData($ref));
-                            leagueEvent.setScoreCard(scoreCardTask.getEventScoreCard(eventId));
-                            eventRepository.save(leagueEvent);
-                            updateLeagueForEvent(leagueEvent.getEventInfo());
-                        }else{
-                            EventAggregate eventAggDb= eventAggregateOptional.get();
-                            eventAggDb.setId(eventId);
-                            if(null == eventAggDb.getEventInfo())
-                                eventAggDb.setEventInfo(eventsListingTask.getEventData($ref));
-                            if(null == eventAggDb.getScoreCard())
-                                eventAggDb.setScoreCard(scoreCardTask.getEventScoreCard(eventId));
-                            eventRepository.save(eventAggDb);
-                            updateLeagueForEvent(eventAggDb.getEventInfo());
+                        Optional<GameAggregate> gameAggregateOptional = gameRepository.findById(gameId);
+                        if (!gameAggregateOptional.isPresent()) {
+                            updateLeagueForEvent(gameAggregateOptional.get());
                         }
                     }catch (Exception e){
                         e.printStackTrace();
@@ -299,7 +300,7 @@ public class LeagueListingTask {
     }
 
 
-
+/*
     public void refreshLeagues(String leagueId) {
         log.info("refreshLeagues : {}", 1);
         edu.cricket.api.cricketscores.rest.source.model.League league = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/leagues/"+leagueId+"?limit=10000", edu.cricket.api.cricketscores.rest.source.model.League.class);
@@ -345,84 +346,16 @@ public class LeagueListingTask {
             }
 
         }
-    }
+    }*/
 
-    public void populateLeagueSeasonInfo( LeagueSeason leagueSeason, Season season){
+  /*  public void populateLeagueSeasonInfo( LeagueSeason leagueSeason, Season season){
         leagueSeason.setName(season.getName());
         leagueSeason.setStartDate(DateUtils.getDateFromString(season.getStartDate()));
         leagueSeason.setLeagueStartDate(season.getStartDate());
         leagueSeason.setEndDate(DateUtils.getDateFromString(season.getEndDate()));
         leagueSeason.setLeagueEndDate(season.getEndDate());
-    }
+    }*/
 
-    public LeagueDetails getLeagueInfo(String leagueId) {
-        Optional<LeagueAggregate> leagueAggregateOptional = leagueRepository.findById(leagueId);
-        if(leagueAggregateOptional.isPresent()){
-            LeagueDetails leagueDetails = new LeagueDetails();
-            LeagueAggregate leagueAggregate =  leagueAggregateOptional.get();
-            leagueDetails.setLeagueId(leagueAggregate.getId());
-            LeagueInfo leagueInfo = leagueAggregate.getLeagueInfo();
-            leagueDetails.setLeagueName(leagueInfo.getLeagueName());
-            leagueDetails.setLeagueSeasons(new ArrayList(leagueInfo.getLeagueSeasonMap().values()));
-            return leagueDetails;
 
-        }
-        else return null;
-    }
-
-    public List<LeagueDetails> getLeagues() {
-        List<LeagueDetails> leagueDetailsList = new ArrayList<>();
-        List<LeagueAggregate> leagueAggregates = leagueRepository.findAll();
-        if(null != leagueAggregates){
-            leagueAggregates.forEach(leagueAggregate -> {
-                LeagueInfo leagueInfo = leagueAggregate.getLeagueInfo();
-                if(isTrendingLeague(leagueInfo)){
-                    LeagueDetails leagueDetails = new LeagueDetails();
-                    leagueDetails.setLeagueId(leagueAggregate.getId());
-                    leagueDetails.setLeagueName(leagueInfo.getLeagueName());
-                    leagueDetailsList.add(leagueDetails);
-                }
-            });
-        }
-        return  leagueDetailsList;
-    }
-
-    private boolean isTrendingLeague(LeagueInfo leagueInfo) {
-        Map<String, LeagueSeason> seasonsMap =  leagueInfo.getLeagueSeasonMap();
-        Optional<LeagueSeason> leagueSeasonOpt = geltLatestLeagueSeason(seasonsMap);
-        if(leagueSeasonOpt.isPresent()){
-            LeagueSeason leagueSeason = leagueSeasonOpt.get();
-            Date startDate = leagueSeason.getStartDate();
-            Date endDate = leagueSeason.getEndDate();
-
-            if(null != startDate ){
-                Calendar cal = Calendar.getInstance();
-                cal.add(Calendar.DATE, 10);
-                if(startDate.compareTo(cal.getTime()) > 0){
-                    return false;
-                }
-            }
-            if(null != endDate ){
-                Calendar cal = Calendar.getInstance();
-                cal.add(Calendar.DATE, -10);
-                if(endDate.compareTo(cal.getTime()) < 0){
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    private Optional<LeagueSeason> geltLatestLeagueSeason(Map<String, LeagueSeason> seasonsMap) {
-        Optional<LeagueSeason> leagueSeasonOpt = Optional.empty();
-        if(null != seasonsMap && seasonsMap.size() > 0 ){
-            List<String> seasonKeyList =  new ArrayList<>(seasonsMap.keySet());
-            Collections.sort(seasonKeyList);
-            leagueSeasonOpt = Optional.ofNullable(seasonsMap.get(seasonKeyList.get(seasonKeyList.size() -1)));
-
-        }
-        return leagueSeasonOpt;
-    }
 
 }

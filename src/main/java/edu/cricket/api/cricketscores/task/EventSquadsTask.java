@@ -1,12 +1,12 @@
 package edu.cricket.api.cricketscores.task;
 
-import edu.cricket.api.cricketscores.domain.EventAggregate;
-import edu.cricket.api.cricketscores.domain.LeagueSquadAggregate;
-import edu.cricket.api.cricketscores.repository.LeagueSquadRepository;
-import edu.cricket.api.cricketscores.rest.response.model.Event;
-import edu.cricket.api.cricketscores.rest.response.model.EventInfo;
-import edu.cricket.api.cricketscores.rest.response.model.Squad;
-import edu.cricket.api.cricketscores.rest.response.model.SquadPlayer;
+import com.cricketfoursix.cricketdomain.aggregate.GameAggregate;
+import com.cricketfoursix.cricketdomain.aggregate.LeagueSquadAggregate;
+import com.cricketfoursix.cricketdomain.common.game.GameClass;
+import com.cricketfoursix.cricketdomain.common.game.GameInfo;
+import com.cricketfoursix.cricketdomain.common.squad.Squad;
+import com.cricketfoursix.cricketdomain.common.squad.SquadPlayer;
+import com.cricketfoursix.cricketdomain.repository.LeagueSquadRepository;
 import edu.cricket.api.cricketscores.rest.service.PlayerNameService;
 import edu.cricket.api.cricketscores.rest.service.TeamNameService;
 import edu.cricket.api.cricketscores.rest.source.model.EventListing;
@@ -42,21 +42,15 @@ public class EventSquadsTask {
 
     private static final Logger log = LoggerFactory.getLogger(EventSquadsTask.class);
 
-    public List<SquadPlayer> getLeagueTeamPlayers(long leagueId, long teamId, Event eventInfo) {
-        Optional<LeagueSquadAggregate> leagueSquadAggregateOptional = leagueSquadRepository.findById(String.valueOf(leagueId));
-        if(leagueSquadAggregateOptional.isPresent()){
-            Optional<Squad> squadOptional = leagueSquadAggregateOptional.get().getSquads().stream().filter(squad -> squad.getTeamName().split(":")[1].equalsIgnoreCase(String.valueOf(teamId*13))).findFirst();
-            if(squadOptional.isPresent()) {
-                return squadOptional.get().getPlayers();
-            }
+       public List<SquadPlayer> getLeagueTeamPlayers(long teamId, GameAggregate gameAggregate) {
 
-        }
-        String ref = "http://core.espnuk.org/v2/sports/cricket/leagues/" + (leagueId/13) + "/teams/" + teamId + "/athletes";
-        if(eventInfo.getInternationalClassId() > 0)
-            ref = ref+ "?internationalClassId=" + eventInfo.getInternationalClassId();
-        else if(eventInfo.getGeneralClassId() > 0){
-            ref = ref+ "?generalClassId=" + eventInfo.getGeneralClassId();
-        }
+        GameInfo gameInfo = gameAggregate.getGameInfo();
+        GameClass gameClass = gameAggregate.getGameInfo().getGameClass();
+        Optional<LeagueSquadAggregate> leagueSquadAggregateOptional = leagueSquadRepository.findById(String.valueOf(gameInfo.getLeagueId()));
+
+        String ref = "http://core.espnuk.org/v2/sports/cricket/leagues/" + (gameInfo.getLeagueId()/13) + "/teams/" + (teamId/13) + "/athletes";
+
+        ref = ref+ "?"+gameClass.getType()+"=" + gameClass.getId();
 
         EventListing athleteListing = restTemplate.getForObject(ref, EventListing.class);
 
@@ -65,12 +59,11 @@ public class EventSquadsTask {
         LeagueSquadAggregate leagueSquadAggregate = null;
         if(leagueSquadAggregateOptional.isPresent()){
             leagueSquadAggregate = leagueSquadAggregateOptional.get();
-            leagueSquadAggregate.getSquads().add(populateSquad(teamId, squadPlayers));
+            leagueSquadAggregate.getSquadMap().put(teamId, populateSquad(teamId, squadPlayers));
         }else{
             leagueSquadAggregate = new LeagueSquadAggregate();
-            leagueSquadAggregate.setId(String.valueOf(leagueId));
-            leagueSquadAggregate.setSquads(new HashSet<>());
-            leagueSquadAggregate.getSquads().add(populateSquad(teamId, squadPlayers));
+            leagueSquadAggregate.setId(String.valueOf(gameInfo.getLeagueId()));
+            leagueSquadAggregate.getSquadMap().put(teamId, populateSquad(teamId, squadPlayers));
         }
         leagueSquadRepository.save(leagueSquadAggregate);
 
@@ -92,6 +85,8 @@ public class EventSquadsTask {
     private Squad populateSquad(long teamId, List<SquadPlayer> squadPlayers) {
         Squad squad = new Squad();
         squad.setTeamName(teamNameService.getTeamName(teamId));
+        squad.setTeamName(teamNameService.getTeamName(teamId));
+
         squad.setPlayers(squadPlayers);
         return squad;
     }

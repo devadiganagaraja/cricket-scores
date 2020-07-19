@@ -1,7 +1,7 @@
 package edu.cricket.api.cricketscores.rest.scheduler;
 
 
-import edu.cricket.api.cricketscores.task.LiveEventTask;
+import edu.cricket.api.cricketscores.task.LiveGamesTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +16,9 @@ public class LiveEventScheduler {
     private static final Logger logger = LoggerFactory.getLogger(LiveEventScheduler.class);
 
     @Autowired
-    LiveEventTask liveEventTask;
+    LiveGamesTask liveEventTask;
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 20000)
     public void refreshLiveEvent() {
         logger.info("starting refreshLiveEvent job at {}", new Date());
         liveEventTask.refreshLiveEvents();

@@ -1,6 +1,6 @@
 package edu.cricket.api.cricketscores.rest.response;
 
-import edu.cricket.api.cricketscores.domain.OverSummary;
+import com.cricketfoursix.cricketdomain.domain.bbb.OverSummary;
 
 import java.util.Objects;
 import java.util.Set;

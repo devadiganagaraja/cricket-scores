@@ -13,8 +13,39 @@ public class Competition {
     private Ref details;
     private Ref tiebreaker;
 
+    private Venue venue;
+
+    @JsonProperty("class")
+    private EventClass eventClass;
+
+    public EventClass getEventClass() {
+        return eventClass;
+    }
+
+    public void setEventClass(EventClass eventClass) {
+        this.eventClass = eventClass;
+    }
+
+    public Venue getVenue() {
+        return venue;
+    }
+
+    public void setVenue(Venue venue) {
+        this.venue = venue;
+    }
+
     @JsonProperty(value = "class")
     private CompetitionClass competitionClass;
+
+    public List<Note> getNotes() {
+        return notes;
+    }
+
+    public void setNotes(List<Note> notes) {
+        this.notes = notes;
+    }
+
+    private List<Note>  notes;
 
     public String getId() {
         return id;

@@ -1,6 +1,6 @@
 package edu.cricket.api.cricketscores.rest.response;
 
-import edu.cricket.api.cricketscores.domain.InningSummary;
+import com.cricketfoursix.cricketdomain.domain.bbb.InningSummary;
 
 import java.util.Set;
 import java.util.TreeSet;

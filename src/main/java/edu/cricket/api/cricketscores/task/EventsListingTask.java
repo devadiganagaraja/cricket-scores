@@ -1,16 +1,14 @@
 package edu.cricket.api.cricketscores.task;
 
-import edu.cricket.api.cricketscores.domain.EventAggregate;
-import edu.cricket.api.cricketscores.domain.QEventAggregate;
-import edu.cricket.api.cricketscores.repository.EventRepository;
+import com.cricketfoursix.cricketdomain.aggregate.GameAggregate;
+import com.cricketfoursix.cricketdomain.common.game.GameInfo;
+import com.cricketfoursix.cricketdomain.common.game.GameStatus;
+import com.cricketfoursix.cricketdomain.repository.GameRepository;
 import edu.cricket.api.cricketscores.rest.response.MatchCommentary;
 import edu.cricket.api.cricketscores.rest.response.model.*;
-import edu.cricket.api.cricketscores.rest.response.model.League;
 import edu.cricket.api.cricketscores.rest.service.PlayerNameService;
 import edu.cricket.api.cricketscores.rest.service.TeamNameService;
 import edu.cricket.api.cricketscores.rest.source.model.*;
-import edu.cricket.api.cricketscores.rest.source.model.Competitor;
-import edu.cricket.api.cricketscores.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,29 +23,34 @@ import java.util.stream.Collectors;
 public class EventsListingTask {
 
     @Autowired
-    EventScoreCardTask eventScoreCardTask;
-
-    @Autowired
     LeagueListingTask leagueListingTask;
 
     @Autowired
     PlayerNameService playerNameService;
 
     @Autowired
+    PreGamesTask preGamesTask;
+
+    @Autowired
+    LiveGamesTask liveGamesTask;
+
+    @Autowired
+    PostGamesTask postGamesTask;
+
+    @Autowired
     TeamNameService teamNameService;
+
+
+    GameRepository gameRepository;
 
     private static final Logger log = LoggerFactory.getLogger(EventsListingTask.class);
 
     RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
-    Map<String,EventAggregate> liveEvents;
+    Map<Long, GameAggregate> liveEvents;
 
-    @Autowired
-    EventRepository eventRepository;
 
-    @Autowired
-    QEventAggregate qEventAggregate;
 
     @Autowired
     EventSquadsTask eventSquadsTask;
@@ -58,26 +61,26 @@ public class EventsListingTask {
 
 
     public void setEvents(){
-        Map<String, Event> eventMap = new ConcurrentHashMap<>();
-        getEvents().forEach($ref ->  {
-            Event event = null;
+        Map<Long, GameAggregate> eventMap = new ConcurrentHashMap<>();
+        getEvents().forEach(sourceEventId ->  {
+            GameAggregate gameAggregate = null;
             try {
-                log.info("$ref :{}", $ref);
-                event = getEventData($ref);
-                leagueListingTask.updateLeagueForEvent(event);
-                if (null != event) {
-                    eventMap.put(event.getEventId(), event);
+                log.info("sourceEventId :{}", sourceEventId);
+                gameAggregate = getGameAggregate(sourceEventId);
+                leagueListingTask.updateLeagueForEvent(gameAggregate);
+                if (null != gameAggregate) {
+                    eventMap.put(gameAggregate.getId(), gameAggregate);
                 }
             }catch (Exception e){
                 e.printStackTrace();
             }
-            log.info("event :{}", event);
+            log.info("event :{}", gameAggregate);
 
         });
         log.info("eventMap :{}", eventMap.size());
 
 
-        Set<String> nonLiveEvents = new HashSet<>();
+        Set<Long> nonLiveEvents = new HashSet<>();
         liveEvents.keySet().forEach(event -> {
 
             if( !eventMap.containsKey(event)){
@@ -98,81 +101,62 @@ public class EventsListingTask {
     private List<String> getEvents(){
         EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/events", EventListing.class);
 
-        return eventListing.getItems().stream().map(ref -> ref.get$ref()).collect(Collectors.toList());
+        return eventListing.getItems().stream().map(ref -> ref.get$ref().split("events/")[1]).collect(Collectors.toList());
     }
 
 
 
-    public Event getEventData(String $ref) {
+    public GameAggregate getGameAggregate(String sourceEventId) {
         try {
 
-            EventDetail eventDetail = restTemplate.getForObject($ref, EventDetail.class);
+            GameStatus gameStatus = getGameStatus(sourceEventId);
 
-            Competition competition = eventDetail.getCompetitions().get(0);
-            Event event = new Event();
-            int intClassId = competition.getCompetitionClass().getInternationalClassId();
-            if (intClassId > 10) return null;
-            event.setInternationalClassId(intClassId);
-            int genClassId = competition.getCompetitionClass().getGeneralClassId();
-            if (intClassId == 0 && genClassId > 10) return null;
-            event.setGeneralClassId(genClassId);
-            event.setEventId(String.valueOf(Integer.parseInt(competition.getId()) * 13));
-            event.setStartDate(DateUtils.getDateFromString(eventDetail.getDate()));
-            event.setEndDate(DateUtils.getDateFromString(eventDetail.getEndDate()));
-            event.setVenue(getEventVenue(eventDetail.getVenues().get(0).get$ref()));
+            Long gameId = Long.valueOf(sourceEventId)*13;
+            GameAggregate gameAggregate = new GameAggregate();
+            gameAggregate.setGameInfo(new GameInfo());
+            gameAggregate.setId(gameId);
 
-            setSeason(eventDetail, event);
-            event.setType(competition.getCompetitionClass().getEventType());
-            event.setNote(competition.getNote());
+            if(GameStatus.pre.equals(gameStatus)){
+                return  preGamesTask.populatePreGameAggregate(gameAggregate);
 
-            MatchStatus matchStatus = restTemplate.getForObject(competition.getStatus().get$ref(), MatchStatus.class);
-            if (null != matchStatus) {
-                if (null != matchStatus.getFeaturedAthletes()) {
-                    matchStatus.getFeaturedAthletes().forEach(featuredAthlete -> {
-                        if (featuredAthlete.getAbbreviation().equalsIgnoreCase("POTM")) {
-                            event.setManOfTheMatch(playerNameService.getPlayerName(featuredAthlete.getPlayerId()));
-                        }
-                    });
-                }
-                event.setDayNumber(matchStatus.getDayNumber());
-                event.setPeriod(matchStatus.getPeriod());
-                if (null != matchStatus.getType()) {
-                    event.setDescription(matchStatus.getType().getDescription());
-                    event.setDescription(matchStatus.getType().getDescription());
-                    event.setDetail(matchStatus.getType().getDetail());
-                    event.setState(matchStatus.getType().getState());
-                }
+            }else if(GameStatus.live.equals(gameStatus)){
+                return liveGamesTask.populateGameAggregate(gameAggregate);
+
+            }else if(GameStatus.post.equals(gameStatus)){
+                return postGamesTask.populatePostGameAggregate(gameId);
+
             }
-
-            List<Competitor> competitorList = competition.getCompetitors();
-            if (null != competitorList && competitorList.size() == 2) {
-                edu.cricket.api.cricketscores.rest.response.model.Competitor team1 = new edu.cricket.api.cricketscores.rest.response.model.Competitor();
-                team1.setTeamName(getEventTeam(competitorList.get(0).getTeam().get$ref()));
-                team1.setScore(getEventScore(competitorList.get(0).getScore().get$ref()));
-                team1.setWinner(competitorList.get(0).isWinner());
-                if("pre".equalsIgnoreCase(event.getState()) && event.getInternationalClassId() > 0) {
-                    long sourceTeam1Id = Long.valueOf(team1.getTeamName().split(":")[1]) / 13;
-                    team1.setSquad(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam1Id, event));
-                }
-                event.setTeam1(team1);
-
-                edu.cricket.api.cricketscores.rest.response.model.Competitor team2 = new edu.cricket.api.cricketscores.rest.response.model.Competitor();
-                team2.setTeamName(getEventTeam(competitorList.get(1).getTeam().get$ref()));
-                team2.setScore(getEventScore(competitorList.get(1).getScore().get$ref()));
-                if("pre".equalsIgnoreCase(event.getState()) && event.getInternationalClassId() > 0) {
-                    long sourceTeam2Id = Long.valueOf(team2.getTeamName().split(":")[1]) / 13;
-                    team2.setSquad(eventSquadsTask.getLeagueTeamPlayers(event.getLeagueId(), sourceTeam2Id, event));
-                }
-                event.setTeam2(team2);
-            }
-            return event;
-        }catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+        return null;
     }
 
-    private void setSeason(EventDetail eventDetail, Event event) {
+
+    private GameStatus getGameStatus(String sourceEventId) {
+        EventStatus eventStatus = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/events/"+sourceEventId+"/competitions/"+ sourceEventId+"/status", EventStatus.class);
+
+        GameStatus gameStatus = GameStatus.cancled;
+        if(null !=eventStatus.getType()) {
+            EventStatusType eventStatusType = eventStatus.getType();
+            log.info("eventStatusType:: {}", eventStatusType);
+
+            if ("post".equalsIgnoreCase(eventStatusType.getState())) {
+                gameStatus = GameStatus.post;
+            } else if ("pre".equalsIgnoreCase(eventStatusType.getState())) {
+                gameStatus = GameStatus.pre;
+            } else if ("in".equalsIgnoreCase(eventStatusType.getState())) {
+                gameStatus = GameStatus.live;
+            } else if ("scheduled".equalsIgnoreCase(eventStatusType.getState())) {
+                gameStatus = GameStatus.future;
+            }
+        }
+        return gameStatus;
+    }
+
+    /*private void setSeason(EventDetail eventDetail, Game event) {
         Season season = restTemplate.getForObject(eventDetail.getSeason().get$ref() , Season.class);
         event.setLeagueId(season.getId()*13);
         event.setLeagueName(season.getName());
@@ -192,9 +176,9 @@ public class EventsListingTask {
     public String getEventScore(String $ref){
         Score score = restTemplate.getForObject($ref , Score.class);
         return  score.getValue();
-    }
+    }*/
 
-    public Set<Event> getEventsInfo(String deltaDays){
+   /* public Set<Event> getEventsInfo(String deltaDays){
         int delta = 0;
         try {
             delta = Integer.parseInt(deltaDays);
@@ -221,7 +205,8 @@ public class EventsListingTask {
         }
         return eventInfos;
 
-    }
+    }*/
+/*
 
     public List<League> getLiveEvents(){
 
@@ -258,5 +243,6 @@ public class EventsListingTask {
         leaguesList.sort(Comparator.comparing(League::getClassId));
         return leaguesList;
     }
+*/
 
 }

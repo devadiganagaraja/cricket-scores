@@ -1,7 +1,9 @@
 package edu.cricket.api.cricketscores.rest.response;
 
-import edu.cricket.api.cricketscores.domain.*;
-import edu.cricket.api.cricketscores.rest.source.model.Dismissal;
+import com.cricketfoursix.cricketdomain.domain.bbb.BallSummary;
+import com.cricketfoursix.cricketdomain.domain.bbb.BatsmanSummary;
+import com.cricketfoursix.cricketdomain.domain.bbb.BowlerSummary;
+import com.cricketfoursix.cricketdomain.domain.bbb.Dismissal;
 
 import java.util.Objects;
 

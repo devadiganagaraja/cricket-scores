@@ -1,5 +1,6 @@
 package edu.cricket.api.cricketscores.task;
 
+import edu.cricket.api.cricketscores.rest.response.MatchCommentary;
 import edu.cricket.api.cricketscores.rest.source.model.EventListing;
 import edu.cricket.api.cricketscores.rest.source.model.MatchStatus;
 import org.slf4j.Logger;
@@ -22,63 +23,72 @@ public class EventStatusTask {
     RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
-    Map<String, Boolean> preEvents;
+    Map<Long, Boolean> preGames;
 
 
     @Autowired
-    Map<String, Boolean> liveEvents;
+    Map<Long, Boolean> liveGames;
 
 
     @Autowired
-    Map<String, Boolean> postEvents;
+    Map<Long, Boolean> postGames;
+
+
+    @Autowired
+    public Map<Long, MatchCommentary> eventsCommsCache;
 
     public void refreshEventStatus() {
         EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/events", EventListing.class);
 
-        Set<String> allEvents = new HashSet<>();
+        Set<Long> allGames = new HashSet<>();
         eventListing.getItems().forEach(ref -> {
             String sourceEventId = ref.get$ref().split("events/")[1];
-            String eventId = String.valueOf(Long.valueOf(sourceEventId)*13);
+            Long gameId = Long.valueOf(sourceEventId)*13;
             String matchStatusRef = "http://core.espnuk.org/v2/sports/cricket/events/"+sourceEventId+"/competitions/"+sourceEventId+"/status";
             MatchStatus matchStatus = restTemplate.getForObject(matchStatusRef, MatchStatus.class);
             if(null != matchStatus && null != matchStatus.getType()){
 
-                allEvents.add(eventId);
+
+
+
+                allGames.add(gameId);
                 if("pre".equalsIgnoreCase(matchStatus.getType().getState())){
-                    ut(eventId, true);
-                    liveEvents.remove(eventId);
-                    postEvents.remove(eventId);
+                    preGames.put(gameId, true);
+                    liveGames.remove(gameId);
+                    postGames.remove(gameId);
+                    eventsCommsCache.remove(gameId);
 
                 }else if("in".equalsIgnoreCase(matchStatus.getType().getState())){
-                    preEvents.remove(eventId);
-                    liveEvents.put(eventId, true);
-                    postEvents.remove(eventId);
+                    preGames.remove(gameId);
+                    liveGames.put(gameId, true);
+                    postGames.remove(gameId);
 
                 }else if("post".equalsIgnoreCase(matchStatus.getType().getState())){
-                    preEvents.remove(eventId);
-                    liveEvents.remove(eventId);
-                    postEvents.put(eventId, true);
+                    preGames.remove(gameId);
+                    liveGames.remove(gameId);
+                    postGames.put(gameId, true);
+                    eventsCommsCache.remove(gameId);
 
                 }
             }
         });
-        filterOldEvent(allEvents);
-        log.info("refreshEventStatus ::::: preEvents : {} ::::: liveEvents : {} ::::: postEvents : {}", preEvents, liveEvents, postEvents);
+        filterOldEvent(allGames);
+        log.info("refreshEventStatus ::::: preGames : {} ::::: liveGames : {} ::::: postGames : {}", preGames, liveGames, postGames);
 
     }
 
-    private void filterOldEvent(Set<String> allEvents) {
-        Set<String> oldEvents = preEvents.keySet().stream().filter(eId -> ! allEvents.contains(eId)).collect(Collectors.toCollection(HashSet::new));
+    private void filterOldEvent(Set<Long> allEvents) {
+        Set<Long> oldEvents = preGames.keySet().stream().filter(eId -> ! allEvents.contains(eId)).collect(Collectors.toCollection(HashSet::new));
         if(null != oldEvents && oldEvents.size() > 0) {
-            oldEvents.forEach(oldEvent -> preEvents.remove(oldEvent));
+            oldEvents.forEach(oldEvent -> preGames.remove(oldEvent));
         }
 
-        oldEvents = liveEvents.keySet().stream().filter(eId -> ! allEvents.contains(eId)).collect(Collectors.toCollection(HashSet::new));
+        oldEvents = liveGames.keySet().stream().filter(eId -> ! allEvents.contains(eId)).collect(Collectors.toCollection(HashSet::new));
         if(null != oldEvents && oldEvents.size() > 0)
-            oldEvents.forEach(oldEvent -> liveEvents.remove(oldEvent));
+            oldEvents.forEach(oldEvent -> liveGames.remove(oldEvent));
 
-        oldEvents = postEvents.keySet().stream().filter(eId -> ! allEvents.contains(eId)).collect(Collectors.toCollection(HashSet::new));
+        oldEvents = postGames.keySet().stream().filter(eId -> ! allEvents.contains(eId)).collect(Collectors.toCollection(HashSet::new));
         if(null != oldEvents && oldEvents.size() > 0)
-            oldEvents.forEach(oldEvent -> postEvents.remove(oldEvent));
+            oldEvents.forEach(oldEvent -> postGames.remove(oldEvent));
     }
 }

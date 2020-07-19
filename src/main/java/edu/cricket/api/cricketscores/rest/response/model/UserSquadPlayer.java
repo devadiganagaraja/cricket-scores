@@ -1,5 +1,7 @@
 package edu.cricket.api.cricketscores.rest.response.model;
 
+import com.cricketfoursix.cricketdomain.common.squad.PlayerPoints;
+
 public class UserSquadPlayer{
     private String playerName;
     private String teamName;

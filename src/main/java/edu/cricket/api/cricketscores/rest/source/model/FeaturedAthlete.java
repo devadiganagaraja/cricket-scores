@@ -1,22 +1,32 @@
 package edu.cricket.api.cricketscores.rest.source.model;
 
 public class FeaturedAthlete {
-    private String abbreviation;
-    private long playerId;
+    private String displayName;
+    private String playerId;
+    private Ref team;
 
-    public String getAbbreviation() {
-        return abbreviation;
+
+    public String getDisplayName() {
+        return displayName;
     }
 
-    public void setAbbreviation(String abbreviation) {
-        this.abbreviation = abbreviation;
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
-    public long getPlayerId() {
+    public String getPlayerId() {
         return playerId;
     }
 
-    public void setPlayerId(long playerId) {
+    public void setPlayerId(String playerId) {
         this.playerId = playerId;
+    }
+
+    public Ref getTeam() {
+        return team;
+    }
+
+    public void setTeam(Ref team) {
+        this.team = team;
     }
 }

@@ -1,6 +1,6 @@
 package edu.cricket.api.cricketscores.rest.scheduler;
 
-import edu.cricket.api.cricketscores.task.PreEventTask;
+import edu.cricket.api.cricketscores.task.PreGamesTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ public class PreEventScheduler {
     private static final Logger logger = LoggerFactory.getLogger(LiveEventScheduler.class);
 
     @Autowired
-    PreEventTask preEventTask;
+    PreGamesTask preEventTask;
 
     @Scheduled(fixedRate = 1200000)
     public void refreshPreEvent() {

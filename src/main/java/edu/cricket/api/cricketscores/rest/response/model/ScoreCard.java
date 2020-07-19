@@ -1,5 +1,7 @@
 package edu.cricket.api.cricketscores.rest.response.model;
 
+import com.cricketfoursix.cricketdomain.common.game.InningsScoreCard;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
