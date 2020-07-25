@@ -31,7 +31,7 @@ public class PlayerNameService {
         long playerId = getPlayerId(sourcePlayerName);
         try {
 
-            Athlete athlete = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/athletes/"+sourcePlayerName, Athlete.class);
+            Athlete athlete = restTemplate.getForObject("http://new.core.espnuk.org/v2/sports/cricket/athletes/"+sourcePlayerName, Athlete.class);
             String displayNameWithId = athlete.getDisplayName()+":"+(playerId);
             if(null != athlete.getPosition()){
                 displayNameWithId  = displayNameWithId.concat(":").concat(getBattingStyle(athlete.getPosition().getName()));

@@ -15,16 +15,9 @@ public class Competition {
 
     private Venue venue;
 
-    @JsonProperty("class")
+    @JsonProperty(value="class")
     private EventClass eventClass;
 
-    public EventClass getEventClass() {
-        return eventClass;
-    }
-
-    public void setEventClass(EventClass eventClass) {
-        this.eventClass = eventClass;
-    }
 
     public Venue getVenue() {
         return venue;
@@ -34,8 +27,7 @@ public class Competition {
         this.venue = venue;
     }
 
-    @JsonProperty(value = "class")
-    private CompetitionClass competitionClass;
+
 
     public List<Note> getNotes() {
         return notes;
@@ -63,23 +55,6 @@ public class Competition {
         this.competitors = competitors;
     }
 
-
-    public CompetitionClass getCompetitionClass() {
-        return competitionClass;
-    }
-
-    public void setCompetitionClass(CompetitionClass competitionClass) {
-        this.competitionClass = competitionClass;
-    }
-
-    public String getNote() {
-        return note;
-    }
-
-    public Ref getDetails() {
-        return details;
-    }
-
     @Override
     public String toString() {
         return "Competition{" +
@@ -89,8 +64,26 @@ public class Competition {
                 ", status=" + status +
                 ", details=" + details +
                 ", tiebreaker=" + tiebreaker +
-                ", competitionClass=" + competitionClass +
+                ", venue=" + venue +
+                ", eventClass=" + eventClass +
+                ", notes=" + notes +
                 '}';
+    }
+
+    public EventClass getEventClass() {
+        return eventClass;
+    }
+
+    public void setEventClass(EventClass eventClass) {
+        this.eventClass = eventClass;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public Ref getDetails() {
+        return details;
     }
 
     public void setDetails(Ref details) {

@@ -1,9 +1,11 @@
 package edu.cricket.api.cricketscores.rest.source.model;
 
+import java.util.Date;
+
 public class Season {
     private long id;
-    private String startDate;
-    private String endDate;
+    private Date startDate;
+    private Date endDate;
     private String name;
     private int year;
 
@@ -15,19 +17,19 @@ public class Season {
         this.id = id;
     }
 
-    public String getStartDate() {
+    public Date getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(String startDate) {
+    public void setStartDate(Date startDate) {
         this.startDate = startDate;
     }
 
-    public String getEndDate() {
+    public Date getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(String endDate) {
+    public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
 
@@ -52,8 +54,8 @@ public class Season {
     public String toString() {
         return "Season{" +
                 "id=" + id +
-                ", startDate='" + startDate + '\'' +
-                ", endDate='" + endDate + '\'' +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
                 ", name='" + name + '\'' +
                 ", year=" + year +
                 '}';

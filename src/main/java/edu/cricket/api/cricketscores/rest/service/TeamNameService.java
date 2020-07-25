@@ -27,7 +27,7 @@ public class TeamNameService {
             if (teamNameCache.containsKey(teamId)) {
                 return teamNameCache.get(teamId);
             } else {
-                Team team = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/teams/" + sourceTeamId, Team.class);
+                Team team = restTemplate.getForObject("http://new.core.espnuk.org/v2/sports/cricket/teams/" + sourceTeamId, Team.class);
                 String displayNameWithId = team.getDisplayName() + ":" + teamId;
 
                 teamNameCache.putIfAbsent(teamId, displayNameWithId);
@@ -46,7 +46,7 @@ public class TeamNameService {
             if (teamNameCache.containsKey(teamId)) {
                 return teamNameCache.get(teamId);
             } else {
-                Team team = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/teams/" + (teamId/13), Team.class);
+                Team team = restTemplate.getForObject("http://new.core.espnuk.org/v2/sports/cricket/teams/" + (teamId/13), Team.class);
                 String displayNameWithId = team.getDisplayName() + ":" + teamId;
 
                 teamNameCache.putIfAbsent(teamId, displayNameWithId);

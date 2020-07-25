@@ -1,6 +1,7 @@
 package edu.cricket.api.cricketscores.rest.scheduler;
 
 
+import edu.cricket.api.cricketscores.async.RefreshLiveGamesTask;
 import edu.cricket.api.cricketscores.task.LiveGamesTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,12 +17,11 @@ public class LiveEventScheduler {
     private static final Logger logger = LoggerFactory.getLogger(LiveEventScheduler.class);
 
     @Autowired
-    LiveGamesTask liveEventTask;
+    LiveGamesTask liveGamesTask;
 
     @Scheduled(fixedRate = 20000)
     public void refreshLiveEvent() {
         logger.info("starting refreshLiveEvent job at {}", new Date());
-        liveEventTask.refreshLiveEvents();
-        logger.info("completed refreshLiveEvent job at {}", new Date());
+        liveGamesTask.refreshLiveEvents();
     }
 }

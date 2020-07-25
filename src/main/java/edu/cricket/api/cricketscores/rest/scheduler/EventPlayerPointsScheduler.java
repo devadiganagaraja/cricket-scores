@@ -18,10 +18,11 @@ public class EventPlayerPointsScheduler {
     private static final Logger logger = LoggerFactory.getLogger(EventPlayerPointsScheduler.class);
 
 
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRate = 300000, initialDelay = 600000)
     public void refreshLiveLeagues() {
+        logger.info("started event player points refresh job at {}", new Date());
+
         eventPlayerPointsTask.updateEventPlayerPoints();
-        logger.info("completed event player points refresh job at {}", new Date());
     }
 
 }

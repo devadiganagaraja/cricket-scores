@@ -18,8 +18,8 @@ public class EventStatusScheduler {
 
     @Scheduled(fixedRate = 900000)
     public void refreshEventStatus() {
-        logger.info("starting refreshLiveEvent job at {}", new Date());
-        eventStatusTask.refreshEventStatus();
-        logger.info("completed refreshLiveEvent job at {}", new Date());
+        logger.info("starting refreshEventStatus job at {}", new Date());
+        eventStatusTask.refreshEventStatusAsync();
+
     }
 }

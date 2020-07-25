@@ -39,10 +39,12 @@ public class EventSquadsTask {
 
 
 
-
     private static final Logger log = LoggerFactory.getLogger(EventSquadsTask.class);
 
+
        public List<SquadPlayer> getLeagueTeamPlayers(long teamId, GameAggregate gameAggregate) {
+
+           List<SquadPlayer> squadPlayers = new ArrayList<>();
 
         GameInfo gameInfo = gameAggregate.getGameInfo();
         GameClass gameClass = gameAggregate.getGameInfo().getGameClass();
@@ -54,18 +56,21 @@ public class EventSquadsTask {
 
         EventListing athleteListing = restTemplate.getForObject(ref, EventListing.class);
 
-        logger.info("ref : {}, athleteListing:{}", ref);
-        List<SquadPlayer>  squadPlayers =  athleteListing.getItems().stream().map($ref -> new SquadPlayer(playerNameService.getPlayerName(Long.valueOf(getPlayerIdFromUrl($ref))))).collect(Collectors.toList());
-        LeagueSquadAggregate leagueSquadAggregate = null;
-        if(leagueSquadAggregateOptional.isPresent()){
-            leagueSquadAggregate = leagueSquadAggregateOptional.get();
-            leagueSquadAggregate.getSquadMap().put(teamId, populateSquad(teamId, squadPlayers));
-        }else{
-            leagueSquadAggregate = new LeagueSquadAggregate();
-            leagueSquadAggregate.setId(String.valueOf(gameInfo.getLeagueId()));
-            leagueSquadAggregate.getSquadMap().put(teamId, populateSquad(teamId, squadPlayers));
+        logger.info("ref : {}", ref);
+
+        if(athleteListing.getItems().size() > 0) {
+            squadPlayers = athleteListing.getItems().stream().map($ref -> new SquadPlayer(playerNameService.getPlayerName(Long.valueOf(getPlayerIdFromUrl($ref))))).collect(Collectors.toList());
+            LeagueSquadAggregate leagueSquadAggregate = null;
+            if (leagueSquadAggregateOptional.isPresent()) {
+                leagueSquadAggregate = leagueSquadAggregateOptional.get();
+                leagueSquadAggregate.getSquadMap().put(teamId, populateSquad(teamId, squadPlayers));
+            } else {
+                leagueSquadAggregate = new LeagueSquadAggregate();
+                leagueSquadAggregate.setId(String.valueOf(gameInfo.getLeagueId()));
+                leagueSquadAggregate.getSquadMap().put(teamId, populateSquad(teamId, squadPlayers));
+            }
+            leagueSquadRepository.save(leagueSquadAggregate);
         }
-        leagueSquadRepository.save(leagueSquadAggregate);
 
         return squadPlayers;
 
@@ -74,7 +79,11 @@ public class EventSquadsTask {
 
     private String getPlayerIdFromUrl(Ref $ref){
         try {
-            String playerStr =   $ref.get$ref().split("athletes/")[1].split("\\?internationalClassId")[0];
+            String playerStr = "0";
+            if($ref.get$ref().contains("internationalClassId"))
+                playerStr = $ref.get$ref().split("athletes/")[1].split("\\?internationalClassId")[0];
+            if($ref.get$ref().contains("generalClassId"))
+                playerStr = $ref.get$ref().split("athletes/")[1].split("\\?generalClassId")[0];
             return playerStr;
         }catch (Exception e){
             return "0";
@@ -84,8 +93,8 @@ public class EventSquadsTask {
 
     private Squad populateSquad(long teamId, List<SquadPlayer> squadPlayers) {
         Squad squad = new Squad();
-        squad.setTeamName(teamNameService.getTeamName(teamId));
-        squad.setTeamName(teamNameService.getTeamName(teamId));
+        squad.setTeamName(teamNameService.getTeamNameByTeamId(teamId));
+        squad.setTeamName(teamNameService.getTeamNameByTeamId(teamId));
 
         squad.setPlayers(squadPlayers);
         return squad;

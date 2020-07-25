@@ -82,4 +82,20 @@ public class Competitor {
     public void setWinner(boolean winner) {
         this.winner = winner;
     }
+
+
+    @Override
+    public String toString() {
+        return "Competitor{" +
+                "id='" + id + '\'' +
+                ", $ref='" + $ref + '\'' +
+                ", homeAway='" + homeAway + '\'' +
+                ", order=" + order +
+                ", score=" + score +
+                ", team=" + team +
+                ", winner=" + winner +
+                ", linescores=" + linescores +
+                ", roster=" + roster +
+                '}';
+    }
 }

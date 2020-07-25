@@ -14,13 +14,12 @@ public class PreEventScheduler {
     private static final Logger logger = LoggerFactory.getLogger(LiveEventScheduler.class);
 
     @Autowired
-    PreGamesTask preEventTask;
+    PreGamesTask preGamesTask;
 
-    @Scheduled(fixedRate = 1200000)
+    @Scheduled(fixedRate = 1200000, initialDelay = 60000)
     public void refreshPreEvent() {
         logger.info("starting refreshPreEvent job at {}", new Date());
-        preEventTask.refreshPreEvents();
-        logger.info("completed refreshPreEvent job at {}", new Date());
+        preGamesTask.refreshPreEvents();
     }
 
 }

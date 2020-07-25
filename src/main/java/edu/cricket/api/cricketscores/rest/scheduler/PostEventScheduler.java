@@ -15,12 +15,12 @@ public class PostEventScheduler {
     private static final Logger logger = LoggerFactory.getLogger(PostEventScheduler.class);
 
     @Autowired
-    PostGamesTask postEventTask;
+    PostGamesTask postGamesTask;
 
-    @Scheduled(fixedRate = 1800000)
+    @Scheduled(fixedRate = 1800000, initialDelay = 60000)
     public void refreshPostEvent() {
         logger.info("starting PostEventScheduler job at {}", new Date());
-        postEventTask.refreshPostEvent();
+        postGamesTask.refreshPostEvents();
         logger.info("completed PostEventScheduler job at {}", new Date());
     }
 }
