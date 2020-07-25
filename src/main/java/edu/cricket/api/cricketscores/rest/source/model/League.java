@@ -5,7 +5,7 @@ public class League {
     private String shortName;
     private Ref season;
     private Ref teams;
-    private Boolean tournament;
+    private boolean isTournament;
 
 
     public String getName() {
@@ -40,12 +40,13 @@ public class League {
         this.teams = teams;
     }
 
-    public Boolean getTournament() {
-        return tournament;
+
+    public boolean isTournament() {
+        return isTournament;
     }
 
-    public void setTournament(Boolean tournament) {
-        this.tournament = tournament;
+    public void setTournament(boolean tournament) {
+        isTournament = tournament;
     }
 
     @Override
@@ -55,7 +56,7 @@ public class League {
                 ", shortName='" + shortName + '\'' +
                 ", season=" + season +
                 ", teams=" + teams +
-                ", tournament=" + tournament +
+                ", tournament=" + isTournament +
                 '}';
     }
 }

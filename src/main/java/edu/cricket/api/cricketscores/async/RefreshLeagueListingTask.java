@@ -12,6 +12,7 @@ import com.cricketfoursix.cricketdomain.repository.GameRepository;
 import com.cricketfoursix.cricketdomain.repository.LeagueRepository;
 import edu.cricket.api.cricketscores.rest.service.TeamNameService;
 import edu.cricket.api.cricketscores.rest.source.model.EventListing;
+import edu.cricket.api.cricketscores.rest.source.model.League;
 import edu.cricket.api.cricketscores.rest.source.model.Season;
 import edu.cricket.api.cricketscores.utils.CommonUtils;
 import org.slf4j.Logger;
@@ -107,7 +108,16 @@ public class RefreshLeagueListingTask implements Runnable{
                 leagueAggregate = new LeagueAggregate();
                 leagueAggregate.setId(leagueId);
                 LeagueInfo leagueInfo = new LeagueInfo();
-                leagueInfo.setLeagueName(gameInfo.getLeagueName());
+                String ref = "http://new.core.espnuk.org/v2/sports/cricket/leagues/"+(leagueId/13);
+                log.info("refrefref=> "+ref);
+                League league = restTemplate.getForObject(ref, League.class);
+                if (null != league) {
+                    leagueInfo.setLeagueName(league.getName());
+                    leagueInfo.setLeagueId(leagueId);
+                    log.info("league.isTournament()league.isTournament()league.isTournament()==>"+league.isTournament());
+                    leagueInfo.setTournament(league.isTournament());
+                    leagueInfo.setAbbreviation(league.getShortName());
+                }
                 leagueAggregate.setLeagueInfo(leagueInfo);
                 setNewLeagueSeason(gameAggregate, leagueAggregate);
             }
