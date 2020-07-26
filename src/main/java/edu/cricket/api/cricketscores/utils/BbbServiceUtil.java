@@ -98,6 +98,7 @@ public class BbbServiceUtil {
             inningCommentarySummary.setTotalRuns(ballDetail.getInnings().getRuns());
             inningCommentarySummary.setWickets(ballDetail.getInnings().getWickets());
             inningCommentarySummary.setInningsNo(ballDetail.getInnings().getNumber());
+            inningCommentarySummary.setRunRate(ballDetail.getInnings().getRunRate());
         }
         if(null != ballDetail.getOver()) {
             inningCommentarySummary.setOversUnique(ballDetail.getOver().getUnique());

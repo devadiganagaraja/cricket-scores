@@ -15,8 +15,18 @@ public class Innings {
     private int remainingRuns;
     private double remainingOvers;
     private int runs;
+
+    public int getRunRate() {
+        return runRate;
+    }
+
+    public void setRunRate(int runRate) {
+        this.runRate = runRate;
+    }
+
     private int wides;
     private int totalRuns;
+    private int runRate;
 
 
     public int getByes() {
