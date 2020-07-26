@@ -171,7 +171,8 @@ public class BbbServiceUtil {
             ballSummary.setOverUnique(ballDetail.getOver().getUnique());
             ballSummary.setOvers(ballDetail.getOver().getOvers());
         }
-        ballSummary.setText(ballDetail.getShortText());
+        ballSummary.setText(ballDetail.getText());
+        ballSummary.setShortText(ballDetail.getShortText());
         ballSummary.setRuns(ballDetail.getScoreValue());
 
         if(null != ballDetail.getBatsman()){

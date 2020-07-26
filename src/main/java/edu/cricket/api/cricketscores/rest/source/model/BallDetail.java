@@ -6,9 +6,19 @@ public class BallDetail {
     private int period;
     private Ref team;
     private String shortText;
+    private String text;
     private int scoreValue;
     private Batsman batsman;
     private Batsman otherBatsman;
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
     private Bowler bowler;
     private Bowler otherBowler;
     private Dismissal dismissal;
