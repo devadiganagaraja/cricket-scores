@@ -45,12 +45,17 @@ public class RefreshPreGamesTask implements Runnable {
     @Override
     public void run() {
 
-        preGames.keySet().forEach(gameId ->{
-            GameAggregate gameAggregate = gameRepository.findById(gameId).orElse(getNewGameAggregate(gameId));
-            populatePreGameAggregate(gameAggregate);
-            gameRepository.save(gameAggregate);
-        });
+        preGames.keySet().forEach(gameId ->refreshPreMatch(gameId));
         log.info("completed refreshPreEvent job at {}", new Date());
+
+    }
+
+
+
+    public void refreshPreMatch(long gameId){
+        GameAggregate gameAggregate = gameRepository.findById(gameId).orElse(getNewGameAggregate(gameId));
+        populatePreGameAggregate(gameAggregate);
+        gameRepository.save(gameAggregate);
 
     }
 

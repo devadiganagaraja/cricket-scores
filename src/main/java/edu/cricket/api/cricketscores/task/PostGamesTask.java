@@ -33,6 +33,10 @@ public class PostGamesTask {
         refreshPostEventsAsync();
     }
 
+    public void refreshPostGame(long gameId){
+        refreshLiveGamesTask.refreshPostGame(gameId);
+    }
+
 
 
 

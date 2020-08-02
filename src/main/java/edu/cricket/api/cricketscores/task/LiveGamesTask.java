@@ -32,6 +32,11 @@ public class LiveGamesTask {
     }
 
 
+    public void refreshLiveGame(Long gameId) {
+        refreshLiveGamesTask.refreshLiveGame(gameId);
+    }
+
+
 
 
 
