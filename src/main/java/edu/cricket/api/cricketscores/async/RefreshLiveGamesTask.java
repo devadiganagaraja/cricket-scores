@@ -41,30 +41,28 @@ public class RefreshLiveGamesTask implements Runnable {
     @Override
     public void run() {
 
-        liveGames.keySet().forEach(gameId ->{
-            log.info("processing live game: {}",gameId);
-            GameAggregate gameAggregate = liveGamesCache.get(gameId);
-            if(null == gameAggregate){
-                Optional<GameAggregate> gameAggregateOptional= gameRepository.findById(gameId);
-                if(gameAggregateOptional.isPresent()){
-                    gameAggregate = gameAggregateOptional.get();
-                }else{
-                    gameAggregate = new GameAggregate();
-                    gameAggregate.setId(gameId);
-                    gameAggregate.setGameInfo(new GameInfo());
-                }
-            }
-            gameServiceUtil.populateGameAggregate(gameAggregate);
-            liveGamesCache.put(gameId, gameAggregate);
-        });
+        liveGames.keySet().forEach(gameId -> refreshLiveGame(gameId));
 
         log.info("completed refreshLiveEvent job at {}", new Date());
 
     }
 
-
-
-
+    public void refreshLiveGame(Long gameId) {
+        log.info("processing live game: {}",gameId);
+        GameAggregate gameAggregate = liveGamesCache.get(gameId);
+        if(null == gameAggregate){
+            Optional<GameAggregate> gameAggregateOptional= gameRepository.findById(gameId);
+            if(gameAggregateOptional.isPresent()){
+                gameAggregate = gameAggregateOptional.get();
+            }else{
+                gameAggregate = new GameAggregate();
+                gameAggregate.setId(gameId);
+                gameAggregate.setGameInfo(new GameInfo());
+            }
+        }
+        gameServiceUtil.populateGameAggregate(gameAggregate);
+        liveGamesCache.put(gameId, gameAggregate);
+    }
 
 
 }

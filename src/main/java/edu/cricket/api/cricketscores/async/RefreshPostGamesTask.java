@@ -46,12 +46,8 @@ public class RefreshPostGamesTask implements Runnable {
 
     @Override
     public void run() {
-
-        postGames.keySet().forEach(gameId ->{
-            populatePostGameAggregate(gameId);
-        });
+        postGames.keySet().forEach(gameId -> populatePostGameAggregate(gameId));
         log.info("completed refreshPostEvent job at {}", new Date());
-
     }
 
 
@@ -162,10 +158,7 @@ public class RefreshPostGamesTask implements Runnable {
     }
 
 
-
-
-
-
-
-
+    public void refreshPostGame(long gameId) {
+        populatePostGameAggregate(gameId);
+    }
 }

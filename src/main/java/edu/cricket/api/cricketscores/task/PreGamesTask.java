@@ -38,6 +38,10 @@ public class PreGamesTask {
         refreshPreEventsAsync();
     }
 
+    public void refreshPreEvent(long gameId){
+        refreshPreGamesTask.refreshPreMatch(gameId);
+    }
+
 
 
 

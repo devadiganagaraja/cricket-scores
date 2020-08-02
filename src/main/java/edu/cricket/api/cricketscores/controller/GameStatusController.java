@@ -1,9 +1,14 @@
 package edu.cricket.api.cricketscores.controller;
 
 
+import edu.cricket.api.cricketscores.task.LiveGamesTask;
+import edu.cricket.api.cricketscores.task.PostGamesTask;
+import edu.cricket.api.cricketscores.task.PreGamesTask;
+import edu.cricket.api.cricketscores.utils.BbbServiceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
@@ -22,6 +27,40 @@ public class GameStatusController {
 
     @Autowired
     Map<Long, Boolean> postGames;
+
+
+    @Autowired
+    PreGamesTask preGamesTask;
+
+    @Autowired
+    LiveGamesTask liveGamesTask;
+
+    @Autowired
+    PostGamesTask postGamesTask;
+
+    @Autowired
+    BbbServiceUtil bbbServiceUtil;
+
+
+
+    @GetMapping("/refreshMatch")
+    public Boolean gamesInCache(@RequestParam("gameId") long gameId) {
+
+        try {
+            preGamesTask.refreshPreEvent(gameId);
+
+            liveGamesTask.refreshLiveGame(gameId);
+
+            postGamesTask.refreshPostGame(gameId);
+
+            bbbServiceUtil.persistAllBallsForGame(gameId);
+
+        }catch (Exception e){
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
 
 
     @GetMapping("/gamesInCache")
