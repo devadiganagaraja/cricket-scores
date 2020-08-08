@@ -19,7 +19,7 @@ public class RefreshAllPostEventBallsTask implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RefreshAllPostEventBallsTask.class);
 
     @Autowired
-    Map<Long, Boolean> postGames;
+    Map<Long, Long> postGames;
 
 
 

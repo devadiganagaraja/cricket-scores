@@ -3,6 +3,7 @@ package edu.cricket.api.cricketscores.async;
 import edu.cricket.api.cricketscores.rest.response.MatchCommentary;
 import edu.cricket.api.cricketscores.rest.source.model.EventListing;
 import edu.cricket.api.cricketscores.rest.source.model.MatchStatus;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,15 +27,15 @@ public class RefreshEventStatusTask implements Runnable{
     RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
-    Map<Long, Boolean> preGames;
+    Map<Long, Long> preGames;
 
 
     @Autowired
-    Map<Long, Boolean> liveGames;
+    Map<Long, Long> liveGames;
 
 
     @Autowired
-    Map<Long, Boolean> postGames;
+    Map<Long, Long> postGames;
 
 
     @Autowired
@@ -48,31 +49,31 @@ public class RefreshEventStatusTask implements Runnable{
         eventListing.getItems().forEach(ref -> {
             String sourceEventId = ref.get$ref().split("events/")[1];
             Long gameId = Long.valueOf(sourceEventId)*13;
-            String matchStatusRef = "http://new.core.espnuk.org/v2/sports/cricket/events/"+sourceEventId+"/competitions/"+sourceEventId+"/status";
+            String matchStatusRef = ref.get$ref()+"/competitions/"+sourceEventId+"/status";
             MatchStatus matchStatus = restTemplate.getForObject(matchStatusRef, MatchStatus.class);
             if(null != matchStatus && null != matchStatus.getType()){
+                String sourceLeagueId = matchStatus.get$ref().split("/events")[0].split("leagues/")[1];
+                if(StringUtils.isNotEmpty(sourceLeagueId)) {
+                    Long leagueId = Long.valueOf(sourceLeagueId)*13;
 
+                    allGames.add(gameId);
+                    if ("pre".equalsIgnoreCase(matchStatus.getType().getState())) {
+                        preGames.put(gameId, leagueId);
+                        liveGames.remove(gameId);
+                        postGames.remove(gameId);
+                        eventsCommsCache.remove(gameId);
 
+                    } else if ("in".equalsIgnoreCase(matchStatus.getType().getState())) {
+                        preGames.remove(gameId);
+                        liveGames.put(gameId, leagueId);
+                        postGames.remove(gameId);
 
-
-                allGames.add(gameId);
-                if("pre".equalsIgnoreCase(matchStatus.getType().getState())){
-                    preGames.put(gameId, true);
-                    liveGames.remove(gameId);
-                    postGames.remove(gameId);
-                    eventsCommsCache.remove(gameId);
-
-                }else if("in".equalsIgnoreCase(matchStatus.getType().getState())){
-                    preGames.remove(gameId);
-                    liveGames.put(gameId, true);
-                    postGames.remove(gameId);
-
-                }else if("post".equalsIgnoreCase(matchStatus.getType().getState())){
-                    preGames.remove(gameId);
-                    liveGames.remove(gameId);
-                    postGames.put(gameId, true);
-                    eventsCommsCache.remove(gameId);
-
+                    } else if ("post".equalsIgnoreCase(matchStatus.getType().getState())) {
+                        preGames.remove(gameId);
+                        liveGames.remove(gameId);
+                        postGames.put(gameId, leagueId);
+                        eventsCommsCache.remove(gameId);
+                    }
                 }
             }
         });

@@ -182,7 +182,7 @@ public class BbbServiceUtil {
         return ballSummary;
     }
 
-    public void persistLiveBallsPolling(Map<Long, Boolean> liveGames) {
+    public void persistLiveBallsPolling(Map<Long, Long> liveGames) {
         liveGames.keySet().forEach(gameId -> {
             String $ref = "http://new.core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+(gameId/13)+"/competitions/"+(gameId/13)+"/details?sort=id:desc&limit=3";
             EventListing detailsListing = restTemplate.getForObject($ref, EventListing.class);

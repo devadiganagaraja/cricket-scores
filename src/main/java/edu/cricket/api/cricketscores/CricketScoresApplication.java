@@ -30,7 +30,7 @@ public class CricketScoresApplication {
 	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
 	@Qualifier("preGames")
-	public Map<Long,Boolean> preGames(){
+	public Map<Long,Long> preGames(){
 		return new ConcurrentHashMap<>();
 	}
 
@@ -38,7 +38,7 @@ public class CricketScoresApplication {
 	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
 	@Qualifier("liveGames")
-	public Map<Long,Boolean> liveGames(){
+	public Map<Long,Long> liveGames(){
 		return new ConcurrentHashMap<>();
 	}
 
@@ -46,7 +46,7 @@ public class CricketScoresApplication {
 	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
 	@Qualifier("postGames")
-	public Map<Long,Boolean> postGames(){
+	public Map<Long,Long> postGames(){
 		return new ConcurrentHashMap<>();
 	}
 

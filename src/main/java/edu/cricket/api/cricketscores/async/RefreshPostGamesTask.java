@@ -29,7 +29,7 @@ public class RefreshPostGamesTask implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(RefreshPostGamesTask.class);
 
     @Autowired
-    Map<Long, Boolean> postGames;
+    Map<Long, Long> postGames;
 
 
     @Autowired
@@ -42,6 +42,8 @@ public class RefreshPostGamesTask implements Runnable {
 
     RestTemplate restTemplate = new RestTemplate();
 
+    @Autowired
+    RefreshPreGamesTask refreshPreGamesTask;
 
 
     @Override
@@ -61,6 +63,7 @@ public class RefreshPostGamesTask implements Runnable {
             Optional<GameAggregate> gameAggregateOptional = gameRepository.findById(gameId);
 
 
+
             if(gameAggregateOptional.isPresent()){
                 gameAggregate = gameAggregateOptional.get();
             }else{
@@ -72,11 +75,26 @@ public class RefreshPostGamesTask implements Runnable {
 
             populateMatchNote(gameAggregate, event);
             populateGameStatus(gameAggregate);
+
+
+
+            log.info("gameAggregate::"+gameId);
+            log.info("before::gameAggregate.getCompetitor1().getInningsScores().size()::"+gameAggregate.getCompetitor1().getInningsScores().size());
+            log.info("before::gameAggregate.getCompetitor2().getInningsScores().size()::"+gameAggregate.getCompetitor2().getInningsScores().size());
+
+
+            gameServiceUtil.populateLineScores(gameAggregate);
+            gameServiceUtil.populateRoster(gameAggregate);
+
+
+            log.info("after::gameAggregate.getCompetitor1().getInningsScores().size()::"+gameAggregate.getCompetitor1().getInningsScores().size());
+            log.info("after::gameAggregate.getCompetitor2().getInningsScores().size()::"+gameAggregate.getCompetitor2().getInningsScores().size());
+
             populateWinner(event, gameAggregate);
             gameRepository.save(gameAggregate);
 
         }catch (Exception e){
-            gameServiceUtil.populateGameAggregate(gameAggregate);
+            gameServiceUtil.populateGameAggregate(gameAggregate, refreshPreGamesTask);
         }
         return gameAggregate;
     }

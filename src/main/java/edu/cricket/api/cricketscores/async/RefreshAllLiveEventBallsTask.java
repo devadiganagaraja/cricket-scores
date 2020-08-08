@@ -19,7 +19,7 @@ public class RefreshAllLiveEventBallsTask implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RefreshAllLiveEventBallsTask.class);
 
     @Autowired
-    Map<Long, Boolean> liveGames;
+    Map<Long, Long> liveGames;
 
 
 

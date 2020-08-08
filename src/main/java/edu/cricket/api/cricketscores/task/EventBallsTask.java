@@ -78,23 +78,6 @@ public class EventBallsTask{
 
 
 
-    @Autowired
-    Map<Long, Boolean> liveGames;
-
-    @Autowired
-    Map<Long, Boolean> postGames;
-
-    RestTemplate restTemplate = new RestTemplate();
-
-    @Autowired
-    BallRepository ballRepository;
-
-    @Autowired
-    TeamNameService teamNameService;
-
-    @Autowired
-    PlayerNameService playerNameService;
-
 
     @Autowired
     TaskExecutor taskExecutor;

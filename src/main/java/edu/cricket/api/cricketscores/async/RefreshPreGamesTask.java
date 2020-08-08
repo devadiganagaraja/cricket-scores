@@ -3,6 +3,7 @@ package edu.cricket.api.cricketscores.async;
 import com.cricketfoursix.cricketdomain.aggregate.GameAggregate;
 import com.cricketfoursix.cricketdomain.common.game.*;
 import com.cricketfoursix.cricketdomain.repository.GameRepository;
+import edu.cricket.api.cricketscores.rest.service.TeamNameService;
 import edu.cricket.api.cricketscores.rest.source.model.*;
 import edu.cricket.api.cricketscores.task.EventSquadsTask;
 import org.apache.commons.lang.StringUtils;
@@ -31,7 +32,7 @@ public class RefreshPreGamesTask implements Runnable {
 
 
     @Autowired
-    Map<Long, Boolean> preGames;
+    Map<Long, Long> preGames;
 
     @Autowired
     GameRepository gameRepository;
@@ -39,6 +40,10 @@ public class RefreshPreGamesTask implements Runnable {
 
     @Autowired
     EventSquadsTask eventSquadsTask;
+
+
+    @Autowired
+    TeamNameService teamNameService;
 
 
 
@@ -98,6 +103,7 @@ public class RefreshPreGamesTask implements Runnable {
                     com.cricketfoursix.cricketdomain.common.game.Competitor competitor1 = new com.cricketfoursix.cricketdomain.common.game.Competitor();
                     competitor1.setId(Long.valueOf(competitor.getId())*13);
                     gameAggregate.getGameInfo().setCompetitor1(competitor1.getId());
+                    gameAggregate.getGameInfo().setTeam1Name(teamNameService.getTeamNameByTeamId(competitor1.getId()));
                     competitor1.setLineScoreRef(competitor.getLinescores().get$ref());
                     competitor1.setRosterRef(competitor.getRoster().get$ref());
                     competitor1.setSquad(eventSquadsTask.getLeagueTeamPlayers( competitor1.getId(), gameAggregate));
@@ -107,6 +113,7 @@ public class RefreshPreGamesTask implements Runnable {
                     com.cricketfoursix.cricketdomain.common.game.Competitor competitor2 = new com.cricketfoursix.cricketdomain.common.game.Competitor();
                     competitor2.setId(Long.valueOf(competitor.getId())*13);
                     gameAggregate.getGameInfo().setCompetitor2(competitor2.getId());
+                    gameAggregate.getGameInfo().setTeam2Name(teamNameService.getTeamNameByTeamId(competitor2.getId()));
                     competitor2.setLineScoreRef(competitor.getLinescores().get$ref());
                     competitor2.setRosterRef(competitor.getRoster().get$ref());
                     competitor2.setSquad(eventSquadsTask.getLeagueTeamPlayers(competitor2.getId(), gameAggregate));
@@ -154,6 +161,7 @@ public class RefreshPreGamesTask implements Runnable {
         GameInfo gameInfo = new GameInfo();
         gameInfo.setGameId(gameAggregate.getId());
         gameInfo.setName(event.getName());
+
         gameInfo.setDate(event.getDate());
         gameInfo.setEndDate(event.getEndDate());
         setSeason(event, gameInfo);
