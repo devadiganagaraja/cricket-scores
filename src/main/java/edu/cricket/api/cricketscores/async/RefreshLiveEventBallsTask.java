@@ -1,7 +1,5 @@
 package edu.cricket.api.cricketscores.async;
 
-import edu.cricket.api.cricketscores.rest.source.model.BallDetail;
-import edu.cricket.api.cricketscores.rest.source.model.EventListing;
 import edu.cricket.api.cricketscores.utils.BbbServiceUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +17,7 @@ public class RefreshLiveEventBallsTask implements Runnable{
     private static final Logger logger = LoggerFactory.getLogger(RefreshLiveEventBallsTask.class);
 
     @Autowired
-    Map<Long, Boolean> liveGames;
+    Map<Long, Long> liveGames;
 
 
     @Autowired

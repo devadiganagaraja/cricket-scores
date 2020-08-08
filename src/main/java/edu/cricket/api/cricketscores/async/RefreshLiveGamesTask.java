@@ -22,7 +22,7 @@ public class RefreshLiveGamesTask implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(RefreshLiveGamesTask.class);
 
     @Autowired
-    Map<Long, Boolean> liveGames;
+    Map<Long, Long> liveGames;
 
 
     @Autowired
@@ -35,6 +35,10 @@ public class RefreshLiveGamesTask implements Runnable {
 
     @Autowired
     GameServiceUtil gameServiceUtil;
+
+
+    @Autowired
+    RefreshPreGamesTask refreshPreGamesTask;
 
 
 
@@ -60,7 +64,7 @@ public class RefreshLiveGamesTask implements Runnable {
                 gameAggregate.setGameInfo(new GameInfo());
             }
         }
-        gameServiceUtil.populateGameAggregate(gameAggregate);
+        gameServiceUtil.populateGameAggregate(gameAggregate, refreshPreGamesTask);
         liveGamesCache.put(gameId, gameAggregate);
     }
 
