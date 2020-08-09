@@ -1,11 +1,20 @@
 package edu.cricket.api.cricketscores.rest.source.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
+
 public class League {
+    private String id;
     private String name;
     private String shortName;
     private Ref season;
     private Ref teams;
+    private String seriesNote;
+
+    @JsonProperty(value = "isTournament")
     private boolean isTournament;
+    private List<String> classId;
 
 
     public String getName() {
@@ -36,6 +45,30 @@ public class League {
         return teams;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public String getSeriesNote() {
+        return seriesNote;
+    }
+
+    public void setSeriesNote(String seriesNote) {
+        this.seriesNote = seriesNote;
+    }
+
+    public List<String> getClassId() {
+        return classId;
+    }
+
+    public void setClassId(List<String> classId) {
+        this.classId = classId;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public void setTeams(Ref teams) {
         this.teams = teams;
     }
@@ -52,11 +85,13 @@ public class League {
     @Override
     public String toString() {
         return "League{" +
-                "name='" + name + '\'' +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
                 ", shortName='" + shortName + '\'' +
                 ", season=" + season +
                 ", teams=" + teams +
-                ", tournament=" + isTournament +
+                ", isTournament=" + isTournament +
+                ", classId=" + classId +
                 '}';
     }
 }

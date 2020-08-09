@@ -3,6 +3,7 @@ package edu.cricket.api.cricketscores.controller;
 
 import edu.cricket.api.cricketscores.async.RefreshPostGamesTask;
 import edu.cricket.api.cricketscores.async.RefreshPreGamesTask;
+import edu.cricket.api.cricketscores.task.LeagueIndexingTask;
 import edu.cricket.api.cricketscores.task.LiveGamesTask;
 import edu.cricket.api.cricketscores.task.PostGamesTask;
 import edu.cricket.api.cricketscores.task.PreGamesTask;
@@ -52,6 +53,9 @@ public class GameStatusController {
     @Autowired
     RefreshPostGamesTask refreshPostGamesTask;
 
+    @Autowired
+    LeagueIndexingTask leagueIndexingTask;
+
 
 
     @GetMapping("/refreshLeagueSeason")
@@ -60,6 +64,21 @@ public class GameStatusController {
         try {
 
             gameServiceUtil.updateLeagueEvents(leagueId, refreshPreGamesTask, refreshPostGamesTask, true);
+
+        }catch (Exception e){
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+
+    @GetMapping("/refreshLeagueIndex")
+    public Boolean refreshLeagueIndex() {
+
+        try {
+
+            leagueIndexingTask.refreshLeagueIndex();
 
         }catch (Exception e){
             e.printStackTrace();

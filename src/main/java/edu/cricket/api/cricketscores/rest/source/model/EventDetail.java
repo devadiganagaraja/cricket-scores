@@ -7,6 +7,7 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class EventDetail {
+    private String $ref;
     private Date date;
     private Date endDate;
     private List<Competition> competitions;
@@ -30,6 +31,14 @@ public class EventDetail {
         this.date = date;
     }
 
+    public String get$ref() {
+        return $ref;
+    }
+
+    public void set$ref(String $ref) {
+        this.$ref = $ref;
+    }
+
     public Date getEndDate() {
         return endDate;
     }
@@ -51,16 +60,20 @@ public class EventDetail {
         return season;
     }
 
+    @Override
+    public String toString() {
+        return "EventDetail{" +
+                "$ref='" + $ref + '\'' +
+                ", date=" + date +
+                ", endDate=" + endDate +
+                ", competitions=" + competitions +
+                ", season=" + season +
+                ", name='" + name + '\'' +
+                '}';
+    }
+
     public void setSeason(Ref season) {
         this.season = season;
     }
 
-    @Override
-    public String toString() {
-        return "EventDetail{" +
-                "date='" + date + '\'' +
-                ", competitions=" + competitions +
-                ", season=" + season +
-                '}';
-    }
 }
