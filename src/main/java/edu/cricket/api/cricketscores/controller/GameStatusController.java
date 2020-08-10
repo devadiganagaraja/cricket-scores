@@ -59,11 +59,11 @@ public class GameStatusController {
 
 
     @GetMapping("/refreshLeagueSeason")
-    public Boolean refreshLeagueSeason(@RequestParam("leagueId") long leagueId, @RequestParam("seasonId") long seasonId) {
+    public Boolean refreshLeagueSeason(@RequestParam("leagueId") long leagueId, @RequestParam("seasonId") int seasonId) {
 
         try {
 
-            gameServiceUtil.updateLeagueEvents(leagueId, refreshPreGamesTask, refreshPostGamesTask, true);
+            gameServiceUtil.updateLeagueEvents(leagueId,seasonId, refreshPreGamesTask, refreshPostGamesTask, true);
 
         }catch (Exception e){
             e.printStackTrace();

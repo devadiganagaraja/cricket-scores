@@ -7,8 +7,7 @@ import com.cricketfoursix.cricketdomain.common.game.Competitor;
 import com.cricketfoursix.cricketdomain.common.league.LeagueInfo;
 import com.cricketfoursix.cricketdomain.common.league.LeagueSeason;
 import com.cricketfoursix.cricketdomain.common.league.LeagueTeam;
-import com.cricketfoursix.cricketdomain.common.stats.BattingLeader;
-import com.cricketfoursix.cricketdomain.common.stats.BowlingLeader;
+import com.cricketfoursix.cricketdomain.common.stats.*;
 import com.cricketfoursix.cricketdomain.repository.GameRepository;
 import com.cricketfoursix.cricketdomain.repository.LeagueRepository;
 import edu.cricket.api.cricketscores.async.RefreshPostGamesTask;
@@ -27,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -500,76 +500,180 @@ public class GameServiceUtil {
     }
 
 
-    public void updateLeagueEvents(Long  leagueId, RefreshPreGamesTask refreshPreGamesTask, RefreshPostGamesTask refreshPostGamesTask, boolean refreshGames) {
+    public void updateLeagueEvents(Long  leagueId, int seasonId, RefreshPreGamesTask refreshPreGamesTask, RefreshPostGamesTask refreshPostGamesTask, boolean refreshGames) {
         Optional<LeagueAggregate> leagueAggregateOptional = leagueRepository.findById(leagueId);
         LeagueAggregate leagueAggregate;
-        if (! leagueAggregateOptional.isPresent()) {
+        if (!leagueAggregateOptional.isPresent()) {
             leagueAggregate = new LeagueAggregate();
             leagueAggregate.setId(leagueId);
-        }else {
+            leagueAggregate.setLeagueInfo(new LeagueInfo());
+        } else {
             leagueAggregate = leagueAggregateOptional.get();
-            LeagueInfo leagueInfo = new LeagueInfo();
-            String ref = "http://new.core.espnuk.org/v2/sports/cricket/leagues/"+(leagueId/13);
-            log.info("refrefref=> "+ref);
-            League league = restTemplate.getForObject(ref, League.class);
-            if (null != league) {
-                leagueInfo.setLeagueName(league.getName());
-                leagueInfo.setLeagueId(leagueId);
-                log.info("league.isTournament()league.isTournament()league.isTournament()==>"+league.isTournament());
-                leagueInfo.setTournament(league.isTournament());
-                leagueInfo.setAbbreviation(league.getShortName());
-            }
-            leagueAggregate.setLeagueInfo(leagueInfo);
-            if(StringUtils.isNotEmpty(league.getSeason().get$ref())) {
-                String seasonRef = league.getSeason().get$ref();
 
-                Season season = restTemplate.getForObject(seasonRef, Season.class);
-                Map<Integer, LeagueSeason> leagueSeasonMap = leagueAggregate.getLeagueInfo().getLeagueSeasonMap();
-                if(null == leagueSeasonMap){
-                    leagueSeasonMap = new HashMap<>();
-                }
-                if(!leagueSeasonMap.containsKey(season.getYear())){
+        }
+        LeagueInfo leagueInfo = leagueAggregate.getLeagueInfo();
+
+        String ref = "http://new.core.espnuk.org/v2/sports/cricket/leagues/" + (leagueId / 13);
+        log.info("refrefref=> " + ref);
+        League league = restTemplate.getForObject(ref, League.class);
+        if (null != league) {
+            leagueInfo.setLeagueName(league.getName());
+            leagueInfo.setLeagueId(leagueId);
+            log.info("league.isTournament()league.isTournament()league.isTournament()==>" + league.isTournament());
+            leagueInfo.setTournament(league.isTournament());
+            leagueInfo.setAbbreviation(league.getShortName());
+        }
+        leagueAggregate.setLeagueInfo(leagueInfo);
+        EventListing leagueSeasons = restTemplate.getForObject(league.getSeasons().get$ref(), EventListing.class);
+        if(null != leagueSeasons){
+            leagueSeasons.getItems().forEach(leagueSeasonsRef -> {
+                Integer leagueSeasonYear = Integer.valueOf(leagueSeasonsRef.get$ref().split("seasons/")[1]);
+                if(! leagueInfo.getLeagueSeasonMap().containsKey(leagueSeasonYear)){
                     LeagueSeason leagueSeason = new LeagueSeason();
-                    populateSeason(leagueId/13, season.getYear(), leagueSeason);
-                    leagueSeasonMap.put(season.getYear(), leagueSeason);
+                    leagueSeason.setLeagueYear(String.valueOf(leagueSeasonYear));
+                    leagueInfo.getLeagueSeasonMap().put(leagueSeasonYear, leagueSeason);
                 }
+            });
+        }
 
-                EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/leagues/"+(leagueId/13)+"/seasons/"+season.getYear()+"/events", EventListing.class);
+        if (StringUtils.isNotEmpty(league.getSeason().get$ref())) {
+            String seasonRef;
+
+            Season season;
+            if (seasonId > 0) {
+                seasonRef = league.get$ref() + "/seasons/" + seasonId;
+            } else {
+                seasonRef = league.getSeason().get$ref();
+            }
+            season = restTemplate.getForObject(seasonRef, Season.class);
+
+            Map<Integer, LeagueSeason> leagueSeasonMap = leagueAggregate.getLeagueInfo().getLeagueSeasonMap();
+            if (null == leagueSeasonMap) {
+                leagueSeasonMap = new HashMap<>();
+            }
+            LeagueSeason leagueSeason = new LeagueSeason();
+            populateSeason(leagueId / 13, season.getYear(), leagueSeason);
+            populateLeaders(leagueSeason);
+            populateLeagueSeasonGroupStandings(leagueSeason, seasonRef);
+            leagueSeasonMap.put(season.getYear(), leagueSeason);
+
+            EventListing eventListing = restTemplate.getForObject("http://core.espnuk.org/v2/sports/cricket/leagues/" + (leagueId / 13) + "/seasons/" + season.getYear() + "/events", EventListing.class);
 
 
-                if(null != eventListing){
-                    eventListing.getItems().forEach(eventRef ->{
-                        try {
-                            log.info("eventRef::"+eventRef);
+            if (null != eventListing) {
+                eventListing.getItems().forEach(eventRef -> {
+                    try {
+                        log.info("eventRef::" + eventRef);
 
-                            String sourceEventId = eventRef.get$ref().split("events/")[1];
-                            Long gameId = Long.valueOf(sourceEventId) * 13;
-                            Optional<GameAggregate> gameAggregateOptional = gameRepository.findById(gameId);
-                            GameAggregate gameAggregate = null;
-                            if (refreshGames || !gameAggregateOptional.isPresent()) {
-                                gameAggregate = getGameAggregate(sourceEventId, refreshPreGamesTask, refreshPostGamesTask);
-                            }else {
-                                gameAggregate = gameAggregateOptional.get();
-                            }
-                            log.info("eventRef::gameAggregate"+gameAggregate);
-                            updateLeagueForEvent(leagueAggregate, gameAggregate);
-                        }catch (Exception e){
-                            e.printStackTrace();
+                        String sourceEventId = eventRef.get$ref().split("events/")[1];
+                        Long gameId = Long.valueOf(sourceEventId) * 13;
+                        Optional<GameAggregate> gameAggregateOptional = gameRepository.findById(gameId);
+                        GameAggregate gameAggregate = null;
+                        if (refreshGames || !gameAggregateOptional.isPresent()) {
+                            gameAggregate = getGameAggregate(sourceEventId, refreshPreGamesTask, refreshPostGamesTask);
+                        } else {
+                            gameAggregate = gameAggregateOptional.get();
                         }
+                        log.info("eventRef::gameAggregate" + gameAggregate);
+                        updateLeagueForEvent(leagueAggregate, gameAggregate);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
-                    });
-                }
-
-
-
+                });
             }
 
 
         }
+
+
+        log.info("saveing league::" + leagueAggregate);
         leagueRepository.save(leagueAggregate);
 
 
+    }
 
+
+    private void populateLeagueSeasonGroupStandings(LeagueSeason leagueSeason, String seasonRef) {
+        String groupsRef = seasonRef+"/types/1/groups";
+
+        EventListing seasonGroups =restTemplate.getForObject(groupsRef, EventListing.class);
+        if(null != seasonGroups && seasonGroups.getItems().size() > 0){
+            seasonGroups.getItems().forEach(seasonGroupRef -> {
+                LeagueSeasonGroup leagueSeasonGroup =restTemplate.getForObject(seasonGroupRef.get$ref(), LeagueSeasonGroup.class);
+
+                if(null != leagueSeasonGroup){
+
+                    TeamStandingGroup teamStandingGroup = new TeamStandingGroup();
+                    teamStandingGroup.setId(Integer.valueOf(leagueSeasonGroup.getId()));
+                    teamStandingGroup.setAbbreviation(leagueSeasonGroup.getAbbreviation());
+                    teamStandingGroup.setName(leagueSeasonGroup.getName());
+                    if(null != leagueSeasonGroup.getStandings()){
+
+                        System.out.println("ref:"+leagueSeasonGroup.getStandings().get$ref()+"/1");
+                        LeagueSeasonGroupStandings leagueSeasonGroupStandings = restTemplate.getForObject(leagueSeasonGroup.getStandings().get$ref()+"/1", LeagueSeasonGroupStandings.class);
+
+                        if(null != leagueSeasonGroupStandings && leagueSeasonGroupStandings.getStandings().size() > 0){
+
+                            leagueSeasonGroupStandings.getStandings().forEach(leagueSeasonGroupStanding ->
+                            {
+                                System.out.println("leagueSeasonGroupStanding:" + leagueSeasonGroupStanding);
+
+                                TeamsStanding teamsStanding = new TeamsStanding();
+                                teamsStanding.setTeamId(Long.valueOf(leagueSeasonGroupStanding.getTeam().get$ref().split("teams/")[1])*13);
+                                teamsStanding.setTeamName(teamNameService.getTeamNameByTeamId(teamsStanding.getTeamId()));
+
+                                if (null != leagueSeasonGroupStanding.getRecords() && leagueSeasonGroupStanding.getRecords().size() > 0)
+                                    leagueSeasonGroupStanding.getRecords().get(0).getStats().forEach(stats -> {
+                                        switch (stats.getName()) {
+                                            case "rank":
+                                                teamsStanding.setRank(stats.getDisplayValue());
+                                                break;
+                                            case "matchesPlayed":
+                                                teamsStanding.setMatchesPlayed(stats.getDisplayValue());
+                                                break;
+                                            case "matchesWon":
+                                                teamsStanding.setMatchesWon(stats.getDisplayValue());
+                                                break;
+                                            case "matchesLost":
+                                                teamsStanding.setMatchesLost(stats.getDisplayValue());
+                                                break;
+
+                                            case "noresult":
+                                                teamsStanding.setNoresult(stats.getDisplayValue());
+                                                break;
+
+                                            case "matchPoints":
+                                                teamsStanding.setMatchPoints(stats.getDisplayValue());
+                                                break;
+                                            case "matchesTied":
+                                                teamsStanding.setMatchesTied(stats.getDisplayValue());
+                                                break;
+
+                                            case "netrr":
+                                                teamsStanding.setNetrr(stats.getDisplayValue());
+                                                break;
+
+                                        }
+                                    });
+                                teamStandingGroup.getTeamsStandings().add(teamsStanding);
+                            });
+
+                        }
+
+
+                    }
+
+
+                    log.info("teamStandingGroup::"+teamStandingGroup);
+
+                    leagueSeason.getTeamGroups().add(teamStandingGroup);
+
+
+                }
+
+            });
+        }
     }
 
 
@@ -659,8 +763,8 @@ public class GameServiceUtil {
         populateSeason(gameInfo.getLeagueId()/13, gameInfo.getSeason(), leagueSeason);
 
 
-        leagueSeason.setBattingLeaders(new TreeSet<>());
-        leagueSeason.setBowlingLeaders(new TreeSet<>());
+        leagueSeason.setBattingLeaders(new ArrayList<>());
+        leagueSeason.setBowlingLeaders(new ArrayList<>());
         leagueSeason.setEventSet(new HashSet<>());
         updateLastEvent(gameInfo, leagueSeason);
         updateNextEvent(gameInfo, leagueSeason);
@@ -763,7 +867,7 @@ public class GameServiceUtil {
             battingLeader.setAverage(String.valueOf(battingLeader.getMatches() > 0 ? battingLeader.getRuns()/battingLeader.getMatches() : "-"));
             battingLeaders.add(battingLeader);
         });
-        leagueSeason.setBattingLeaders(battingLeaders);
+        leagueSeason.setBattingLeaders(battingLeaders.stream().sorted(Comparator.comparing(BattingLeader::getRuns, Comparator.reverseOrder()).thenComparing(BattingLeader::getMatches)).limit(3).collect(Collectors.toList()));
 
 
         Set<BowlingLeader> bowlingLeaders = new TreeSet<>();
@@ -772,7 +876,7 @@ public class GameServiceUtil {
             bowlingLeader.setAverage(String.valueOf(bowlingLeader.getOvers() > 0 ? bowlingLeader.getRunsConceded()/bowlingLeader.getOvers() : "-" ));
             bowlingLeaders.add(bowlingLeader);
         });
-        leagueSeason.setBowlingLeaders(bowlingLeaders);
+        leagueSeason.setBowlingLeaders(bowlingLeaders.stream().sorted(Comparator.comparing(BowlingLeader::getWickets, Comparator.reverseOrder()).thenComparing(BowlingLeader::getMatches)).limit(3).collect(Collectors.toList()));
 
 
     }
@@ -795,6 +899,7 @@ public class GameServiceUtil {
                             BattingLeader battingLeader = new BattingLeader();
                             battingLeader.setPlayerId(batsmanCard.getPlayerId());
                             battingLeader.setPlayerName(batsmanCard.getPlayerName());
+                            battingLeader.setTeamName(teamNameService.getTeamNameByTeamId(competitor.getId()));
                             battingLeader.setMatches(1);
                             battingLeader.setRuns(CommonUtils.getIntegerFromString(batsmanCard.getRuns()));
                             battingLeader.setBalls(CommonUtils.getIntegerFromString(batsmanCard.getBalls()));
@@ -822,6 +927,7 @@ public class GameServiceUtil {
                             BowlingLeader bowlingLeader = new BowlingLeader();
                             bowlingLeader.setPlayerId(bowlerCard.getPlayerId());
                             bowlingLeader.setPlayerName(bowlerCard.getPlayerName());
+                            bowlingLeader.setTeamName(teamNameService.getTeamNameByTeamId(competitor.getId()));
                             bowlingLeader.setMatches(1);
                             bowlingLeader.setRunsConceded(CommonUtils.getIntegerFromString(bowlerCard.getConceded()));
                             bowlingLeader.setWickets(CommonUtils.getIntegerFromString(bowlerCard.getWickets()));

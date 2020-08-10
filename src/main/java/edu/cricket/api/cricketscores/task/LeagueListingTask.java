@@ -44,13 +44,13 @@ public class LeagueListingTask {
             String seasonYear = String.valueOf(season.getYear());
 
             if (null != season) {
-                Optional<LeagueAggregate> leagueAggregateOptional = leagueRepository.findById(leagueId);
-                LeagueAggregate leagueAggregate;
-                if (leagueAggregateOptional.isPresent()) {
-                    leagueAggregate = leagueAggregateOptional.get();
+                Optional<gate> gateOptional = leagueRepository.findById(leagueId);
+                gate gate;
+                if (gateOptional.isPresent()) {
+                    gate = gateOptional.get();
 
-                    if (null != leagueAggregate.getLeagueInfo()) {
-                        Map<String, LeagueSeason> leagueSeasonMap = leagueAggregate.getLeagueInfo().getLeagueSeasonMap();
+                    if (null != gate.getLeagueInfo()) {
+                        Map<String, LeagueSeason> leagueSeasonMap = gate.getLeagueInfo().getLeagueSeasonMap();
                         if (null != leagueSeasonMap) {
                             LeagueSeason leagueSeason;
                             if (leagueSeasonMap.containsKey(seasonYear)) {
@@ -65,8 +65,8 @@ public class LeagueListingTask {
                     }
                 } else {
 
-                    leagueAggregate = new LeagueAggregate();
-                    leagueAggregate.setId(leagueId);
+                    gate = new gate();
+                    gate.setId(leagueId);
                     LeagueInfo leagueInfo = new LeagueInfo();
                     Map<String, LeagueSeason> leagueSeasonMap = new HashMap<>();
                     LeagueSeason leagueSeason = new LeagueSeason();
@@ -74,9 +74,9 @@ public class LeagueListingTask {
                     populateLeagueSeasonInfo(leagueSeason, season);
                     leagueSeasonMap.put(seasonYear, leagueSeason);
                     leagueInfo.setLeagueSeasonMap(leagueSeasonMap);
-                    leagueAggregate.setLeagueInfo(leagueInfo);
+                    gate.setLeagueInfo(leagueInfo);
                 }
-                leagueRepository.save(leagueAggregate);
+                leagueRepository.save(gate);
             }
 
         }
