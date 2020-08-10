@@ -43,7 +43,7 @@ public class RefreshLeagueListingTask implements Runnable{
 
         log.info("liveLeagues==>"+liveLeagues);
 
-        liveLeagues.stream().forEach(liveLeague ->gameServiceUtil.updateLeagueEvents(liveLeague, refreshPreGamesTask, refreshPostGamesTask, false));
+        liveLeagues.stream().forEach(liveLeague ->gameServiceUtil.updateLeagueEvents(liveLeague, 0, refreshPreGamesTask, refreshPostGamesTask, false));
     }
 
 

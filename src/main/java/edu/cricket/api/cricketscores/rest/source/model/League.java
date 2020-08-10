@@ -5,10 +5,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class League {
+    private String $ref;
     private String id;
     private String name;
     private String shortName;
     private Ref season;
+    private Ref seasons;
     private Ref teams;
     private String seriesNote;
 
@@ -19,6 +21,14 @@ public class League {
 
     public String getName() {
         return name;
+    }
+
+    public Ref getSeasons() {
+        return seasons;
+    }
+
+    public void setSeasons(Ref seasons) {
+        this.seasons = seasons;
     }
 
     public void setName(String name) {
@@ -43,6 +53,14 @@ public class League {
 
     public Ref getTeams() {
         return teams;
+    }
+
+    public String get$ref() {
+        return $ref;
+    }
+
+    public void set$ref(String $ref) {
+        this.$ref = $ref;
     }
 
     public String getId() {
