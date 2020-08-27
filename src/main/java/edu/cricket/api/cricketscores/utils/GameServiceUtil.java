@@ -66,7 +66,9 @@ public class GameServiceUtil {
 
             populateMatchNote(gameAggregate, event);
             populateGameStatus(gameAggregate);
-            return gameRepository.save(gameAggregate);
+            gameRepository.save(gameAggregate);
+            updateLeagueForEvent(gameAggregate);
+            return gameAggregate;
         }catch (Exception e){
             refreshPreGamesTask.populatePreGameAggregate(gameAggregate);
         }

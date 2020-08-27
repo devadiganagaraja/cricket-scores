@@ -52,7 +52,7 @@ public class RefreshEventStatusTask implements Runnable{
             String matchStatusRef = ref.get$ref()+"/competitions/"+sourceEventId+"/status";
             MatchStatus matchStatus = restTemplate.getForObject(matchStatusRef, MatchStatus.class);
             if(null != matchStatus && null != matchStatus.getType()){
-                String sourceLeagueId = matchStatus.get$ref().split("/events")[0].split("leagues/")[1];
+                String sourceLeagueId = ref.get$ref().split("/events")[0].split("leagues/")[1];
                 if(StringUtils.isNotEmpty(sourceLeagueId)) {
                     Long leagueId = Long.valueOf(sourceLeagueId)*13;
 
