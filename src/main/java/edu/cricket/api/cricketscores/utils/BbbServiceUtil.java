@@ -35,12 +35,12 @@ public class BbbServiceUtil {
     PlayerNameService playerNameService;
 
     public void persistAllBallsForGame(Long gameId) {
-        String $ref = "http://new.core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+(gameId/13)+"/competitions/"+(gameId/13)+"/details";
+        String $ref = "http://core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+(gameId/13)+"/competitions/"+(gameId/13)+"/details";
         EventListing detailsListing = restTemplate.getForObject($ref, EventListing.class);
         int pageCount = detailsListing.getPageCount();
         while(pageCount > 0){
             if(pageCount != 1){
-                $ref = "http://new.core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+(gameId/13)+"/competitions/"+(gameId/13)+"/details?page="+pageCount;
+                $ref = "http://core.espnuk.org/v2/sports/cricket/leagues/8040/events/"+(gameId/13)+"/competitions/"+(gameId/13)+"/details?page="+pageCount;
                 detailsListing = restTemplate.getForObject($ref, EventListing.class);
             }
             detailsListing.getItems().forEach(ref -> {
